@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const inputClass =
   "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20";
@@ -10,6 +10,14 @@ export default function CapaciteEmprunt() {
   const [taux, setTaux] = useState("");
   const [duree, setDuree] = useState("");
   const [resultat, setResultat] = useState(null);
+  const [tauxBCE, setTauxBCE] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/taux")
+      .then((r) => r.json())
+      .then((d) => { if (d.taux) setTauxBCE(d); })
+      .catch(() => {});
+  }, []);
 
   const calculer = (e) => {
     e.preventDefault();
@@ -26,7 +34,15 @@ export default function CapaciteEmprunt() {
 
   return (
     <div className="mx-auto max-w-md rounded-2xl bg-[#12282A] p-8">
-<form onSubmit={calculer} className="flex flex-col gap-5">
+      {tauxBCE && (
+        <div className="mb-5 flex items-center gap-2 rounded-full bg-[#C9A84C]/10 px-3 py-1.5 ring-1 ring-[#C9A84C]/30 w-fit">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#C9A84C] shrink-0" />
+          <span className="text-xs font-medium text-[#C9A84C]">
+            Taux BCE actuel : {tauxBCE.taux}%{tauxBCE.date ? ` (${tauxBCE.date})` : ""}
+          </span>
+        </div>
+      )}
+      <form onSubmit={calculer} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1">
           <label htmlFor="salaire" className="text-sm font-medium text-zinc-300">
             Revenus mensuels nets (€)

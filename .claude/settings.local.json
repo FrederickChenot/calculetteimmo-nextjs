@@ -6,7 +6,12 @@
       "Bash(npm -v)",
       "Read(//c/Users/Fred/.nvm/**)",
       "Read(//c/Users/Fred/AppData/Roaming/**)",
-      "Bash(where node:*)"
+      "Bash(where node:*)",
+      "WebSearch",
+      "WebFetch(domain:webstat.banque-france.fr)",
+      "WebFetch(domain:developer.webstat.banque-france.fr)",
+      "WebFetch(domain:data.ecb.europa.eu)",
+      "WebFetch(domain:data-api.ecb.europa.eu)"
     ]
   }
 }

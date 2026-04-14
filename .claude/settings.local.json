@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(where.exe node:*)",
+      "Bash(npm -v)",
+      "Read(//c/Users/Fred/.nvm/**)",
+      "Read(//c/Users/Fred/AppData/Roaming/**)",
+      "Bash(where node:*)"
+    ]
+  }
+}

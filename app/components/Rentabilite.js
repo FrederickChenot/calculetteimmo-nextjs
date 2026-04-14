@@ -1,0 +1,140 @@
+"use client";
+import { useState } from "react";
+
+const inputClass =
+  "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20";
+
+const CHAMPS = [
+  { id: "PrixAchat", label: "Prix d'achat (€)", placeholder: "ex : 200000" },
+  { id: "apport", label: "Apport personnel (€)", placeholder: "ex : 30000" },
+  { id: "tauxEmprunt", label: "Taux d'emprunt (%)", placeholder: "ex : 3.5", step: "0.01" },
+  { id: "dureeCredit", label: "Durée du crédit (années)", placeholder: "ex : 20" },
+  { id: "loyer", label: "Loyer mensuel hors charges (€)", placeholder: "ex : 800" },
+  { id: "chargesRecuperables", label: "Charges récupérables (€/mois)", placeholder: "ex : 100" },
+  { id: "chargesCopropriete", label: "Charges de copropriété (€/mois)", placeholder: "ex : 80" },
+  { id: "taxeFonciere", label: "Taxe foncière (€/mois)", placeholder: "ex : 60" },
+  { id: "entretien", label: "Entretien (€/mois)", placeholder: "ex : 30" },
+  { id: "assurance", label: "Assurance PNO (€/mois)", placeholder: "ex : 15" },
+  { id: "coutRenovation", label: "Coût de rénovation total (€)", placeholder: "ex : 10000" },
+  { id: "vacanceLocative", label: "Vacance locative (%)", placeholder: "ex : 5", step: "0.1" },
+];
+
+const DEFAULTS = Object.fromEntries(CHAMPS.map(({ id }) => [id, ""]));
+
+function calculer(vals) {
+  const v = Object.fromEntries(
+    Object.entries(vals).map(([k, val]) => [k, parseFloat(val) || 0])
+  );
+
+  const montantEmprunte = v.PrixAchat - v.apport;
+  const tauxMensuel = v.tauxEmprunt / 100 / 12;
+  const totalMois = v.dureeCredit * 12;
+
+  const mensualite =
+    (montantEmprunte * tauxMensuel * (1 + tauxMensuel) ** totalMois) /
+    ((1 + tauxMensuel) ** totalMois - 1);
+
+  const coutVacance =
+    ((v.loyer + v.chargesRecuperables) * (v.vacanceLocative / 100)) / 12;
+  const coutRenovMensuel = v.coutRenovation / totalMois;
+
+  const depensesSansCredit =
+    v.chargesCopropriete +
+    v.taxeFonciere +
+    v.entretien +
+    v.assurance +
+    coutVacance +
+    coutRenovMensuel -
+    v.chargesRecuperables;
+
+  const depensesTotales = mensualite + depensesSansCredit;
+
+  const rentabiliteBrute = ((v.loyer * 12) / v.PrixAchat) * 100;
+  const rentabiliteNette =
+    ((v.loyer * 12 - depensesSansCredit * 12) / v.PrixAchat) * 100;
+  const effortNet = v.loyer - depensesTotales;
+
+  return { mensualite, rentabiliteBrute, rentabiliteNette, effortNet };
+}
+
+export default function Rentabilite() {
+  const [champs, setChamps] = useState(DEFAULTS);
+  const [resultat, setResultat] = useState(null);
+
+  const handleChange = (id, value) =>
+    setChamps((prev) => ({ ...prev, [id]: value }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setResultat(calculer(champs));
+  };
+
+  return (
+    <div className="mx-auto max-w-md rounded-2xl bg-[#12282A] p-8">
+<form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {CHAMPS.map(({ id, label, placeholder, step }) => (
+          <div key={id} className="flex flex-col gap-1">
+            <label htmlFor={id} className="text-sm font-medium text-zinc-300">
+              {label}
+            </label>
+            <input
+              id={id}
+              type="number"
+              step={step ?? "1"}
+              placeholder={placeholder}
+              value={champs[id]}
+              onChange={(e) => handleChange(id, e.target.value)}
+              className={inputClass}
+              required
+            />
+          </div>
+        ))}
+
+        <button
+          type="submit"
+          className="mt-2 rounded-full bg-[#C9A84C] px-6 py-3 font-semibold text-[#12282A] transition-colors hover:bg-[#b8942d]"
+        >
+          Calculer
+        </button>
+      </form>
+
+      {resultat && (
+        <div className="mt-6 flex flex-col gap-3 rounded-xl bg-[#0d1f21] p-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-zinc-400">Mensualité du prêt</span>
+            <span className="font-medium text-zinc-100">
+              {resultat.mensualite.toFixed(0)} €/mois
+            </span>
+          </div>
+          <div className="h-px bg-[#2a4a4d]" />
+          <div className="flex justify-between text-sm">
+            <span className="text-zinc-400">Rentabilité brute</span>
+            <span className="font-medium text-zinc-100">
+              {resultat.rentabiliteBrute.toFixed(1)} %
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-zinc-400">Rentabilité nette</span>
+            <span className="font-medium text-zinc-100">
+              {resultat.rentabiliteNette.toFixed(1)} %
+            </span>
+          </div>
+          <div className="h-px bg-[#2a4a4d]" />
+          <div className="flex justify-between text-sm">
+            <span className="text-zinc-400">
+              {resultat.effortNet >= 0 ? "Bénéfice net mensuel" : "Effort net mensuel"}
+            </span>
+            <span
+              className={`font-bold ${
+                resultat.effortNet >= 0 ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {resultat.effortNet >= 0 ? "+" : "-"}
+              {Math.abs(resultat.effortNet).toFixed(0)} €/mois
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

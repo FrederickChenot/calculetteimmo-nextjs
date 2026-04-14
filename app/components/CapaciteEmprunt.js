@@ -1,0 +1,119 @@
+"use client";
+import { useState } from "react";
+
+const inputClass =
+  "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20";
+
+export default function CapaciteEmprunt() {
+  const [salaire, setSalaire] = useState("");
+  const [autreEmprunt, setAutreEmprunt] = useState("");
+  const [taux, setTaux] = useState("");
+  const [duree, setDuree] = useState("");
+  const [resultat, setResultat] = useState(null);
+
+  const calculer = (e) => {
+    e.preventDefault();
+    const s = parseFloat(salaire);
+    const a = parseFloat(autreEmprunt) || 0;
+    const r = parseFloat(taux) / 100 / 12;
+    const n = parseFloat(duree) * 12;
+
+    const mensualiteMax = s * 0.35 - a;
+    const capacite = (mensualiteMax * (1 - Math.pow(1 + r, -n))) / r;
+
+    setResultat(capacite > 0 ? capacite.toFixed(0) : null);
+  };
+
+  return (
+    <div className="mx-auto max-w-md rounded-2xl bg-[#12282A] p-8">
+<form onSubmit={calculer} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="salaire" className="text-sm font-medium text-zinc-300">
+            Revenus mensuels nets (€)
+          </label>
+          <input
+            id="salaire"
+            type="number"
+            placeholder="ex : 3000"
+            value={salaire}
+            onChange={(e) => setSalaire(e.target.value)}
+            className={inputClass}
+            required
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="autreEmprunt" className="text-sm font-medium text-zinc-300">
+            Autres emprunts en cours (€/mois)
+          </label>
+          <input
+            id="autreEmprunt"
+            type="number"
+            placeholder="ex : 200"
+            value={autreEmprunt}
+            onChange={(e) => setAutreEmprunt(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="taux" className="text-sm font-medium text-zinc-300">
+            Taux d&apos;intérêt annuel (%)
+          </label>
+          <input
+            id="taux"
+            type="number"
+            step="0.01"
+            placeholder="ex : 3.5"
+            value={taux}
+            onChange={(e) => setTaux(e.target.value)}
+            className={inputClass}
+            required
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="duree" className="text-sm font-medium text-zinc-300">
+            Durée (années)
+          </label>
+          <input
+            id="duree"
+            type="number"
+            placeholder="ex : 20"
+            value={duree}
+            onChange={(e) => setDuree(e.target.value)}
+            className={inputClass}
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="mt-2 rounded-full bg-[#C9A84C] px-6 py-3 font-semibold text-[#12282A] transition-colors hover:bg-[#b8942d]"
+        >
+          Calculer
+        </button>
+      </form>
+
+      {resultat && (
+        <div className="mt-6 rounded-xl bg-[#0d1f21] p-4 text-center">
+          <p className="text-sm text-zinc-400">Capacité d&apos;emprunt estimée</p>
+          <p className="text-3xl font-bold text-white">
+            {parseInt(resultat).toLocaleString("fr-FR")} €
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Basé sur un taux d&apos;endettement maximum de 35 %
+          </p>
+        </div>
+      )}
+
+      {resultat === null && salaire && taux && duree && (
+        <div className="mt-6 rounded-xl bg-red-900/30 p-4 text-center">
+          <p className="text-sm text-red-400">
+            Les charges mensuelles dépassent la capacité d&apos;emprunt.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,23 +1,23 @@
 "use client";
 import { useState } from "react";
-import { exportPdf } from "./exportPdf";
+import { exportPdf, fmtNum } from "./exportPdf";
 
 const inputClass =
   "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20";
 
 const CHAMPS = [
-  { id: "PrixAchat", label: "Prix d'achat (€)", placeholder: "ex : 200000" },
-  { id: "apport", label: "Apport personnel (€)", placeholder: "ex : 30000" },
-  { id: "tauxEmprunt", label: "Taux d'emprunt (%)", placeholder: "ex : 3.5", step: "0.01" },
-  { id: "dureeCredit", label: "Durée du crédit (années)", placeholder: "ex : 20" },
-  { id: "loyer", label: "Loyer mensuel hors charges (€)", placeholder: "ex : 800" },
-  { id: "chargesRecuperables", label: "Charges récupérables (€/mois)", placeholder: "ex : 100" },
-  { id: "chargesCopropriete", label: "Charges de copropriété (€/mois)", placeholder: "ex : 80" },
-  { id: "taxeFonciere", label: "Taxe foncière (€/mois)", placeholder: "ex : 60" },
-  { id: "entretien", label: "Entretien (€/mois)", placeholder: "ex : 30" },
-  { id: "assurance", label: "Assurance PNO (€/mois)", placeholder: "ex : 15" },
-  { id: "coutRenovation", label: "Coût de rénovation total (€)", placeholder: "ex : 10000" },
-  { id: "vacanceLocative", label: "Vacance locative (%)", placeholder: "ex : 5", step: "0.1" },
+  { id: "PrixAchat",           label: "Prix d'achat",                    placeholder: "ex : 200000",  unit: "€" },
+  { id: "apport",              label: "Apport personnel",                 placeholder: "ex : 30000",   unit: "€" },
+  { id: "tauxEmprunt",         label: "Taux d'emprunt",                   placeholder: "ex : 3.5",     unit: "%",     step: "0.01" },
+  { id: "dureeCredit",         label: "Durée du crédit",                  placeholder: "ex : 20",      unit: "ans" },
+  { id: "loyer",               label: "Loyer mensuel hors charges",       placeholder: "ex : 800",     unit: "€/mois" },
+  { id: "chargesRecuperables", label: "Charges récupérables",             placeholder: "ex : 100",     unit: "€/mois" },
+  { id: "chargesCopropriete",  label: "Charges de copropriété",           placeholder: "ex : 80",      unit: "€/mois" },
+  { id: "taxeFonciere",        label: "Taxe foncière",                    placeholder: "ex : 60",      unit: "€/mois" },
+  { id: "entretien",           label: "Entretien",                        placeholder: "ex : 30",      unit: "€/mois" },
+  { id: "assurance",           label: "Assurance PNO",                    placeholder: "ex : 15",      unit: "€/mois" },
+  { id: "coutRenovation",      label: "Coût de rénovation total",         placeholder: "ex : 10000",   unit: "€" },
+  { id: "vacanceLocative",     label: "Vacance locative",                 placeholder: "ex : 5",       unit: "%",     step: "0.1" },
 ];
 
 const DEFAULTS = Object.fromEntries(CHAMPS.map(({ id }) => [id, ""]));
@@ -58,7 +58,7 @@ function calculer(vals) {
   return { mensualite, rentabiliteBrute, rentabiliteNette, effortNet };
 }
 
-const LABELS = Object.fromEntries(CHAMPS.map(({ id, label }) => [id, label]));
+const CHAMP_MAP = Object.fromEntries(CHAMPS.map((c) => [c.id, c]));
 
 export default function Rentabilite() {
   const [champs, setChamps] = useState(DEFAULTS);
@@ -72,7 +72,14 @@ export default function Rentabilite() {
       titre: "Rentabilité locative",
       donnees: CHAMPS
         .filter(({ id }) => champs[id] !== "")
-        .map(({ id }) => [LABELS[id], champs[id]]),
+        .map(({ id }) => {
+          const { label, unit } = CHAMP_MAP[id];
+          const raw = champs[id];
+          const val = unit === "%" || unit === "ans"
+            ? `${raw} ${unit}`
+            : `${fmtNum(raw)} ${unit}`;
+          return [`${label} (${unit})`, val];
+        }),
       resultats: [
         ["Mensualité du prêt",   `${resultat.mensualite.toFixed(0)} €/mois`],
         ["Rentabilité brute",    `${resultat.rentabiliteBrute.toFixed(2)} %`],
@@ -98,10 +105,10 @@ export default function Rentabilite() {
   return (
     <div className="mx-auto max-w-md rounded-2xl bg-[#12282A] p-8">
 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {CHAMPS.map(({ id, label, placeholder, step }) => (
+        {CHAMPS.map(({ id, label, unit, placeholder, step }) => (
           <div key={id} className="flex flex-col gap-1">
             <label htmlFor={id} className="text-sm font-medium text-zinc-300">
-              {label}
+              {label} ({unit})
             </label>
             <input
               id={id}

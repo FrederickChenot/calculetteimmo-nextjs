@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { exportPdf, fmtNum } from "./exportPdf";
 
 const inputClass =
   "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20";
@@ -10,6 +11,27 @@ export default function Calculette() {
   const [taux, setTaux] = useState("");
   const [resultat, setResultat] = useState(null);
   const [tauxBCE, setTauxBCE] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!resultat) return;
+    setPdfLoading(true);
+    await exportPdf({
+      titre: "Calcul de mensualité",
+      donnees: [
+        ["Montant emprunté",      `${fmtNum(montant)} €`],
+        ["Durée",                 `${duree} ans`],
+        ["Taux d'intérêt annuel", `${taux} %`],
+      ],
+      resultats: [
+        ["Mensualité estimée",     `${fmtNum(resultat)} €`],
+        ["Coût total des intérêts",`${fmtNum(parseFloat(resultat) * parseFloat(duree) * 12 - parseFloat(montant))} €`],
+        ["Coût total du crédit",   `${fmtNum(parseFloat(resultat) * parseFloat(duree) * 12)} €`],
+      ],
+      filename: "mensualite.pdf",
+    });
+    setPdfLoading(false);
+  };
 
   useEffect(() => {
     fetch("/api/taux")
@@ -93,9 +115,19 @@ export default function Calculette() {
       </form>
 
       {resultat && (
-        <div className="mt-6 rounded-xl bg-[#0d1f21] p-4 text-center">
-          <p className="text-sm text-zinc-400">Mensualité estimée</p>
-          <p className="text-3xl font-bold text-white">{resultat} €</p>
+        <div className="mt-6 space-y-3">
+          <div className="rounded-xl bg-[#0d1f21] p-4 text-center">
+            <p className="text-sm text-zinc-400">Mensualité estimée</p>
+            <p className="text-3xl font-bold text-white">{parseFloat(resultat).toLocaleString("fr-FR")} €</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={pdfLoading}
+            className="w-full rounded-full border border-[#C9A84C]/50 px-6 py-2.5 text-sm font-medium text-[#C9A84C] transition-colors hover:bg-[#C9A84C]/10 disabled:opacity-50"
+          >
+            {pdfLoading ? "Génération…" : "Exporter en PDF"}
+          </button>
         </div>
       )}
     </div>

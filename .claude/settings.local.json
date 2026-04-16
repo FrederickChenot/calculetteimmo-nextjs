@@ -11,7 +11,8 @@
       "WebFetch(domain:webstat.banque-france.fr)",
       "WebFetch(domain:developer.webstat.banque-france.fr)",
       "WebFetch(domain:data.ecb.europa.eu)",
-      "WebFetch(domain:data-api.ecb.europa.eu)"
+      "WebFetch(domain:data-api.ecb.europa.eu)",
+      "Bash(npm install *)"
     ]
   }
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { exportPdf } from "./exportPdf";
 
 const inputClass =
   "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20";
@@ -57,9 +58,34 @@ function calculer(vals) {
   return { mensualite, rentabiliteBrute, rentabiliteNette, effortNet };
 }
 
+const LABELS = Object.fromEntries(CHAMPS.map(({ id, label }) => [id, label]));
+
 export default function Rentabilite() {
   const [champs, setChamps] = useState(DEFAULTS);
   const [resultat, setResultat] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!resultat) return;
+    setPdfLoading(true);
+    await exportPdf({
+      titre: "Rentabilité locative",
+      donnees: CHAMPS
+        .filter(({ id }) => champs[id] !== "")
+        .map(({ id }) => [LABELS[id], champs[id]]),
+      resultats: [
+        ["Mensualité du prêt",   `${resultat.mensualite.toFixed(0)} €/mois`],
+        ["Rentabilité brute",    `${resultat.rentabiliteBrute.toFixed(2)} %`],
+        ["Rentabilité nette",    `${resultat.rentabiliteNette.toFixed(2)} %`],
+        [
+          resultat.effortNet >= 0 ? "Bénéfice net mensuel" : "Effort net mensuel",
+          `${resultat.effortNet >= 0 ? "+" : "-"}${Math.abs(resultat.effortNet).toFixed(0)} €/mois`,
+        ],
+      ],
+      filename: "rentabilite-locative.pdf",
+    });
+    setPdfLoading(false);
+  };
 
   const handleChange = (id, value) =>
     setChamps((prev) => ({ ...prev, [id]: value }));
@@ -100,7 +126,8 @@ export default function Rentabilite() {
       </form>
 
       {resultat && (
-        <div className="mt-6 flex flex-col gap-3 rounded-xl bg-[#0d1f21] p-4">
+        <div className="mt-6 space-y-3">
+        <div className="flex flex-col gap-3 rounded-xl bg-[#0d1f21] p-4">
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400">Mensualité du prêt</span>
             <span className="font-medium text-zinc-100">
@@ -134,6 +161,15 @@ export default function Rentabilite() {
               {Math.abs(resultat.effortNet).toFixed(0)} €/mois
             </span>
           </div>
+        </div>
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={pdfLoading}
+            className="w-full rounded-full border border-[#C9A84C]/50 px-6 py-2.5 text-sm font-medium text-[#C9A84C] transition-colors hover:bg-[#C9A84C]/10 disabled:opacity-50"
+          >
+            {pdfLoading ? "Génération…" : "Exporter en PDF"}
+          </button>
         </div>
       )}
     </div>

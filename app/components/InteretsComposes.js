@@ -70,6 +70,7 @@ export default function InteretsComposes() {
           </div>
           <input
             type="number"
+            min="0"
             value={capital}
             onChange={(e) => setCapital(e.target.value)}
             className={inputClass}
@@ -97,6 +98,7 @@ export default function InteretsComposes() {
           </div>
           <input
             type="number"
+            min="0"
             value={epargne}
             onChange={(e) => setEpargne(e.target.value)}
             className={inputClass}
@@ -124,6 +126,7 @@ export default function InteretsComposes() {
           </div>
           <input
             type="number"
+            min="0"
             step="0.01"
             value={taux}
             onChange={(e) => setTaux(e.target.value)}
@@ -152,6 +155,7 @@ export default function InteretsComposes() {
           </div>
           <input
             type="number"
+            min="0"
             value={horizon}
             onChange={(e) => setHorizon(e.target.value)}
             className={inputClass}

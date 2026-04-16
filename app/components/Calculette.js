@@ -45,6 +45,7 @@ export default function Calculette() {
           <input
             id="montant"
             type="number"
+            min="0"
             placeholder="ex : 200000"
             value={montant}
             onChange={(e) => setMontant(e.target.value)}
@@ -59,6 +60,7 @@ export default function Calculette() {
           <input
             id="duree"
             type="number"
+            min="0"
             value={duree}
             onChange={(e) => setDuree(e.target.value)}
             placeholder="ex : 20"
@@ -73,6 +75,7 @@ export default function Calculette() {
           <input
             id="taux"
             type="number"
+            min="0"
             step="0.01"
             placeholder="ex : 3.5"
             value={taux}

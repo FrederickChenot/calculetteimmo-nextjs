@@ -74,6 +74,7 @@ export default function FraisNotaire() {
           <input
             id="capital"
             type="number"
+            min="0"
             placeholder="ex : 250000"
             value={capital}
             onChange={(e) => setCapital(e.target.value)}

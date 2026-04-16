@@ -50,6 +50,7 @@ export default function CapaciteEmprunt() {
           <input
             id="salaire"
             type="number"
+            min="0"
             placeholder="ex : 3000"
             value={salaire}
             onChange={(e) => setSalaire(e.target.value)}
@@ -65,6 +66,7 @@ export default function CapaciteEmprunt() {
           <input
             id="autreEmprunt"
             type="number"
+            min="0"
             placeholder="ex : 200"
             value={autreEmprunt}
             onChange={(e) => setAutreEmprunt(e.target.value)}
@@ -79,6 +81,7 @@ export default function CapaciteEmprunt() {
           <input
             id="taux"
             type="number"
+            min="0"
             step="0.01"
             placeholder="ex : 3.5"
             value={taux}
@@ -95,6 +98,7 @@ export default function CapaciteEmprunt() {
           <input
             id="duree"
             type="number"
+            min="0"
             placeholder="ex : 20"
             value={duree}
             onChange={(e) => setDuree(e.target.value)}

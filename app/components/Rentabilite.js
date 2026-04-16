@@ -80,6 +80,7 @@ export default function Rentabilite() {
             <input
               id={id}
               type="number"
+              min="0"
               step={step ?? "1"}
               placeholder={placeholder}
               value={champs[id]}

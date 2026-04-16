@@ -31,7 +31,9 @@ function parseSdmx(data) {
   const observations = root.dataSets[0].series[seriesKey].observations;
 
   // Prendre l'observation avec l'index le plus élevé (la plus récente)
-  const obsKeys = Object.keys(observations).sort((a, b) => parseInt(b) - parseInt(a));
+  const obsKeys = Object.keys(observations).sort(
+    (a, b) => parseInt(b) - parseInt(a),
+  );
   const latestKey = obsKeys[0];
   const taux = observations[latestKey][0];
 
@@ -39,7 +41,7 @@ function parseSdmx(data) {
 
   // Récupérer la période depuis structure.dimensions.observation TIME_PERIOD
   const timeDim = root.structure?.dimensions?.observation?.find(
-    (d) => d.id === "TIME_PERIOD"
+    (d) => d.id === "TIME_PERIOD",
   );
   const tp = timeDim?.values?.[parseInt(latestKey)];
   const date = tp?.end ?? tp?.id ?? tp?.name ?? null;
@@ -77,16 +79,24 @@ export async function GET() {
   // 1. Essai ECB (sans authentification)
   try {
     const result = await fetchEcb();
-    return Response.json({ taux: result.taux, date: formatDate(result.date), source: result.source });
+    return Response.json({
+      taux: result.taux,
+      date: formatDate(result.date),
+      source: result.source,
+    });
   } catch (ecbErr) {
     // 2. Fallback BDF (si clé configurée dans .env.local)
     try {
       const result = await fetchBdf();
-      return Response.json({ taux: result.taux, date: formatDate(result.date), source: result.source });
+      return Response.json({
+        taux: result.taux,
+        date: formatDate(result.date),
+        source: result.source,
+      });
     } catch {
       return Response.json(
         { error: "Taux temporairement indisponible", detail: ecbErr.message },
-        { status: 503 }
+        { status: 503 },
       );
     }
   }

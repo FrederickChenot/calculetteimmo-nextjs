@@ -7,5 +7,8 @@ export default function sitemap() {
     { url: `${base}/blog/comment-calculer-mensualite-pret-immobilier`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/capacite-emprunt-immobilier`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/frais-de-notaire-achat-immobilier`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/lmnp-regime-reel-simplifie`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/bitcoin-halving-impact-prix`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/crypto-fiscalite-france-2026`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ];
 }

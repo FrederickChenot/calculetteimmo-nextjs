@@ -89,7 +89,7 @@ export default function Home() {
         </div>
 
         {/* Ad 1 — hors grille, pleine largeur */}
-        <AdSense slot="1234567890" />
+        <AdSense slot="8297412166" />
 
         {/* Row 2 — 2 cards */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3 items-start mt-8">
@@ -99,7 +99,7 @@ export default function Home() {
         </div>
 
         {/* Ad 2 — hors grille, pleine largeur */}
-        <AdSense slot="0987654321" />
+        <AdSense slot="1114950353" />
       </div>
     </main>
   );

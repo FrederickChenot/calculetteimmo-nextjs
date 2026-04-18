@@ -22,6 +22,16 @@ export const metadata = {
   },
   description:
     "Calculez votre mensualité, capacité d'emprunt, frais de notaire, rentabilité locative et intérêts composés.",
+  openGraph: {
+    images: [
+      {
+        url: "/img/og-image.webp",
+        width: 1200,
+        height: 630,
+        alt: "CalculetteImmo — Vos outils de calcul immobilier",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {

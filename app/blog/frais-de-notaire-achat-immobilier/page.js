@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Frais de notaire lors d'un achat immobilier : montant et calcul — CalculetteImmo",
+  title: "Frais de notaire lors d'un achat immobilier : tout comprendre",
   description:
     "Combien coûtent les frais de notaire en 2024 ? Découvrez comment ils se calculent pour un bien ancien ou neuf, les tranches officielles et comment les réduire légalement.",
 };

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Capacité d'emprunt immobilier : comment la calculer ? — CalculetteImmo",
+  title: "Capacité d'emprunt immobilier : comment la calculer ?",
   description:
     "Découvrez comment calculer votre capacité d'emprunt immobilier : taux d'endettement, revenus pris en compte, apport personnel et conseils pour maximiser votre budget d'achat.",
 };

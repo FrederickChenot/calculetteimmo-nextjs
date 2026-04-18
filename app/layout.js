@@ -16,7 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "CalculetteImmo — Outils de calcul immobilier",
+  title: {
+    default: "CalculetteImmo — Outils de calcul immobilier",
+    template: "%s — CalculetteImmo",
+  },
   description:
     "Calculez votre mensualité, capacité d'emprunt, frais de notaire, rentabilité locative et intérêts composés.",
 };
@@ -30,7 +33,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col bg-[#12282A]">
         <Script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9574641219746800"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />

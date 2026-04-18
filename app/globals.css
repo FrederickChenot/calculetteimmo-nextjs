@@ -21,35 +21,39 @@ body {
 
 @media (max-width: 768px) {
   input[type="range"] {
-    height: 6px;
+    height: 8px;
+    padding-block: 10px;
+    box-sizing: content-box;
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
   }
 
   input[type="range"]::-webkit-slider-runnable-track {
-    height: 6px;
-    border-radius: 3px;
+    height: 8px;
+    border-radius: 4px;
+    background: #2a4a4d;
   }
 
   input[type="range"]::-moz-range-track {
-    height: 6px;
-    border-radius: 3px;
+    height: 8px;
+    border-radius: 4px;
+    background: #2a4a4d;
   }
 
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    margin-top: -9px;
+    margin-top: -12px;
     cursor: pointer;
   }
 
   input[type="range"]::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: none;
     cursor: pointer;

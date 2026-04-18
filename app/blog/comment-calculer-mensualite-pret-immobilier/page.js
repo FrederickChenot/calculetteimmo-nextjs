@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Comment calculer la mensualité d'un prêt immobilier ? — CalculetteImmo",
+  title: "Comment calculer la mensualité d'un prêt immobilier ?",
   description:
     "Formule, exemples concrets et simulateur en ligne : apprenez à calculer précisément la mensualité de votre prêt immobilier en fonction du taux, de la durée et du capital emprunté.",
 };

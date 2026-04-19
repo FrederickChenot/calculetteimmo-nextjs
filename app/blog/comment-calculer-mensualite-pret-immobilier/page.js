@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "Comment calculer la mensualité d'un prêt immobilier ?",
@@ -27,6 +28,7 @@ export default function ArticleMensualite() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Comment calculer la mensualité d'un prêt immobilier ?
           </h1>
+          <ViewCounter slug="comment-calculer-mensualite-pret-immobilier" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Comprendre comment se calcule votre mensualité vous permet de mieux négocier votre prêt
             et d'anticiper votre budget. Voici tout ce qu'il faut savoir, avec la formule et des

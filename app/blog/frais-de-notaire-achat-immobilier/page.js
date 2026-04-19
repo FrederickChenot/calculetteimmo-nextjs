@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "Frais de notaire lors d'un achat immobilier : tout comprendre",
@@ -27,6 +28,7 @@ export default function ArticleFraisNotaire() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Frais de notaire lors d'un achat immobilier : tout comprendre
           </h1>
+          <ViewCounter slug="frais-de-notaire-achat-immobilier" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Souvent appelés « frais d'acquisition », les frais de notaire représentent un poste
             budgétaire incontournable lors d'un achat immobilier. Voici comment les calculer

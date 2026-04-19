@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "Bitcoin halving : historique, mécanisme et impact sur le prix",
@@ -25,6 +26,7 @@ export default function ArticleBitcoinHalving() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Bitcoin halving : historique, mécanisme et impact sur le prix
           </h1>
+          <ViewCounter slug="bitcoin-halving-impact-prix" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Tous les quatre ans environ, la récompense des mineurs Bitcoin est divisée par deux.
             Cet événement — le halving — est l'un des mécanismes les plus influents sur le prix du BTC.

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "Fiscalité crypto en France 2026 : ce qu'il faut déclarer",
@@ -25,6 +26,7 @@ export default function ArticleCryptoFiscalite() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Fiscalité crypto en France 2026 : ce qu'il faut déclarer
           </h1>
+          <ViewCounter slug="crypto-fiscalite-france-2026" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Beaucoup d'investisseurs crypto ignorent leurs obligations fiscales — et se retrouvent avec
             des redressements surprises. Voici les règles en vigueur en France pour 2026, expliquées

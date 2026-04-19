@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "LMNP réel simplifié : amortissements, charges et liasse 2031",
@@ -25,6 +26,7 @@ export default function ArticleLMNP() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             LMNP réel simplifié : amortissements, charges et liasse 2031
           </h1>
+          <ViewCounter slug="lmnp-regime-reel-simplifie" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Le régime réel simplifié est le plus avantageux pour un loueur meublé non professionnel.
             Bien utilisé, il permet de louer plusieurs années sans payer un centime d'impôt grâce aux

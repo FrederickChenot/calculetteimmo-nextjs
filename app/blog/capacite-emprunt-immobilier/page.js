@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "Capacité d'emprunt immobilier : comment la calculer ?",
@@ -27,6 +28,7 @@ export default function ArticleCapaciteEmprunt() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Capacité d'emprunt immobilier : comment la calculer ?
           </h1>
+          <ViewCounter slug="capacite-emprunt-immobilier" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Avant de visiter des biens ou de contacter une banque, il est essentiel de connaître
             votre capacité d'emprunt. C'est le montant maximum que vous pouvez financer par crédit

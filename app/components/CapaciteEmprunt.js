@@ -53,6 +53,11 @@ export default function CapaciteEmprunt() {
     const capacite = (mensualiteMax * (1 - Math.pow(1 + r, -n))) / r;
 
     setResultat(capacite > 0 ? capacite.toFixed(0) : null);
+    fetch("/api/views", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "calc-capacite" }),
+    }).catch(() => {});
   };
 
   return (

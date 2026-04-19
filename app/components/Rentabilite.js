@@ -100,6 +100,11 @@ export default function Rentabilite() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setResultat(calculer(champs));
+    fetch("/api/views", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "calc-rentabilite" }),
+    }).catch(() => {});
   };
 
   return (

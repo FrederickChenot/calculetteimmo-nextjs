@@ -47,6 +47,11 @@ export default function Calculette() {
     const t = parseFloat(taux) / 100 / 12;
     const mensualite = (m * t) / (1 - Math.pow(1 + t, -n));
     setResultat(mensualite.toFixed(2));
+    fetch("/api/views", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "calc-mensualite" }),
+    }).catch(() => {});
   };
 
   return (

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // DMTO — Droits de Mutation à Titre Onéreux 2024
 // Ancien : taxe départ. 4,5% + taxe communale 1,20% + frais d'assiette 2,37% × taxe départ.
@@ -60,9 +60,21 @@ export default function FraisNotaire() {
   const [capital, setCapital]     = useState("");
   const [etat, setEtat]           = useState("ancien");
   const [showDetail, setShowDetail] = useState(false);
+  const tracked = useRef(false);
 
   const prix   = parseFloat(capital);
   const result = capital && prix > 0 ? calcul(prix, etat) : null;
+
+  useEffect(() => {
+    if (result && !tracked.current) {
+      tracked.current = true;
+      fetch("/api/views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: "calc-notaire" }),
+      }).catch(() => {});
+    }
+  }, [result]);
 
   return (
     <div className="mx-auto max-w-md rounded-2xl bg-[#12282A] p-8">

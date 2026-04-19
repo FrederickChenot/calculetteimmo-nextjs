@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewCounter from "@/app/components/ViewCounter";
 
 export const metadata = {
   title: "Blog — Guides immobilier, fiscalité et crypto",
@@ -54,6 +55,7 @@ const ARTICLES = [
 export default function BlogIndex() {
   return (
     <main className="flex-1 px-4 py-12 sm:px-6">
+      <ViewCounter slug="blog" />
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-12 text-center bg-[#0d1f21] py-8 rounded-xl">

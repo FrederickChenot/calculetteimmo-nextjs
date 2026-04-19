@@ -5,6 +5,7 @@ import FraisNotaire from "./components/FraisNotaire";
 import InteretsComposes from "./components/InteretsComposes";
 import Rentabilite from "./components/Rentabilite";
 import AdSense from "./components/AdSense";
+import ViewCounter from "./components/ViewCounter";
 
 const CARDS = [
   {
@@ -70,6 +71,7 @@ function Card({ Component, image, alt, titre, description }) {
 export default function Home() {
   return (
     <main className="flex-1 px-4 py-10 sm:px-6">
+      <ViewCounter slug="home" />
       <div className="mx-auto max-w-7xl">
         {/* Intro */}
         <div className="mb-10 text-center bg-[#0d1f21] py-6 rounded-xl">

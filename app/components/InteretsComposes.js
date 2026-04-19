@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 function calculerInteretsComposes(capital, epargne, taux, horizon, intervalle) {
   const tauxAnnuel = taux / 100;
@@ -42,6 +42,18 @@ export default function InteretsComposes() {
   const [horizon, setHorizon] = useState(10);
   const [intervalle, setIntervalle] = useState(1);
   const [modeAvance, setModeAvance] = useState(false);
+  const tracked = useRef(false);
+
+  const trackUsage = () => {
+    if (!tracked.current) {
+      tracked.current = true;
+      fetch("/api/views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: "calc-interets" }),
+      }).catch(() => {});
+    }
+  };
 
   const tousValides = capital !== "" && taux !== "" && horizon !== "";
 
@@ -72,7 +84,7 @@ export default function InteretsComposes() {
             type="number"
             min="0"
             value={capital}
-            onChange={(e) => setCapital(e.target.value)}
+            onChange={(e) => { setCapital(e.target.value); trackUsage(); }}
             className={inputClass}
           />
           <input
@@ -81,7 +93,7 @@ export default function InteretsComposes() {
             max="500000"
             step="1000"
             value={capital}
-            onChange={(e) => setCapital(e.target.value)}
+            onChange={(e) => { setCapital(e.target.value); trackUsage(); }}
             className="w-full accent-[#C9A84C]"
           />
         </div>

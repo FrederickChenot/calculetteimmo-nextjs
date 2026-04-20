@@ -156,7 +156,14 @@ export default function Footer() {
             >
               Politique de confidentialité
             </button>
+            <span className="text-zinc-700">·</span>
+            <a href="/politique-confidentialite" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">
+              Page dédiée
+            </a>
           </nav>
+          <p className="text-xs text-zinc-600 mt-2 text-center max-w-xl mx-auto">
+            Les contenus de ce site sont fournis à titre informatif uniquement et ne constituent pas des conseils financiers, fiscaux ou juridiques.
+          </p>
         </div>
       </footer>
 

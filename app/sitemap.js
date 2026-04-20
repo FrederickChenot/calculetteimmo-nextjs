@@ -15,5 +15,6 @@ export default function sitemap() {
     { url: `${base}/blog/rendement-locatif-net-net`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/bitcoin-investissement-long-terme`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/apport-personnel-achat-immobilier`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/politique-confidentialite`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

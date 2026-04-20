@@ -50,6 +50,9 @@ const ARTICLES = [
       "Flat tax 30 %, seuil de 305 €, formulaire 2086, échanges crypto-to-crypto : tout ce que vous devez savoir pour déclarer vos cryptos sans erreur.",
     tag: "Crypto & Fiscalité",
   },
+  { slug: "rendement-locatif-net-net", titre: "Rendement locatif net net : ce que les agences ne calculent pas", description: "Rendement brut, net et net net : apprenez à calculer la vraie rentabilité de votre investissement locatif.", tag: "Investissement" },
+  { slug: "bitcoin-investissement-long-terme", titre: "Investir dans Bitcoin sur 10 ans : stratégie et risques", description: "DCA, gestion du risque, conservation des clés : comment aborder Bitcoin sur le long terme de façon rationnelle.", tag: "Bitcoin" },
+  { slug: "apport-personnel-achat-immobilier", titre: "Apport personnel : quel montant minimum en 2026 ?", description: "Combien faut-il d'apport pour acheter en 2026 ? Règles des banques, minimum exigé et comment emprunter sans apport.", tag: "Financement" },
 ];
 
 export default function BlogIndex() {

@@ -37,36 +37,6 @@ const MODALS = {
       </>
     ),
   },
-  confidentialite: {
-    title: "Politique de Confidentialité",
-    content: (
-      <>
-        <Section title="1. Données collectées">
-          CalculetteImmo ne collecte <strong>aucune donnée personnelle identifiable</strong>. Les
-          valeurs saisies dans les calculettes (prix, revenus, taux…) ne sont pas transmises à nos
-          serveurs et restent uniquement dans votre navigateur.
-        </Section>
-        <Section title="2. Cookies et traceurs">
-          Le site peut utiliser des cookies techniques strictement nécessaires au fonctionnement
-          (aucun cookie publicitaire ou de profilage). Aucune donnée de navigation n'est revendue
-          à des tiers.
-        </Section>
-        <Section title="3. Hébergement">
-          Le site est hébergé dans l'Union Européenne. Les données de navigation (logs serveur)
-          sont conservées au maximum 30 jours à des fins de sécurité et de débogage.
-        </Section>
-        <Section title="4. Vos droits (RGPD)">
-          Conformément au Règlement Général sur la Protection des Données (UE 2016/679), vous
-          disposez d'un droit d'accès, de rectification et d'effacement. Pour exercer ces droits,
-          contactez-nous à l'adresse indiquée sur le site.
-        </Section>
-        <Section title="5. Tiers">
-          Le site peut intégrer des ressources externes (polices Google Fonts, CDN). Ces tiers
-          disposent de leurs propres politiques de confidentialité.
-        </Section>
-      </>
-    ),
-  },
 };
 
 function Section({ title, children }) {
@@ -125,45 +95,25 @@ export default function Footer() {
 
   return (
     <>
-      <footer className="mt-auto border-t border-[#C9A84C]/20 bg-[#0d1f21] py-5">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <p className="text-xs text-zinc-500">
-            © 2026{" "}
-            <span className="text-zinc-400 font-medium">
-              Calculette<span className="text-[#C9A84C]">Immo</span>
-            </span>{" "}
-            — Estimations à titre indicatif
-          </p>
-          <nav className="flex items-center gap-1 text-xs text-zinc-500">
-            <a href="/a-propos" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">
-              À propos
-            </a>
+      <footer className="mt-auto border-t border-[#C9A84C]/20 bg-[#0d1f21] py-6">
+        <div className="mx-auto max-w-7xl px-6 flex flex-col items-center gap-4">
+
+          {/* Ligne 1 — liens nav */}
+          <nav className="flex flex-wrap items-center justify-center gap-1 text-xs text-zinc-500">
+            <a href="/a-propos" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">À propos</a>
             <span className="text-zinc-700">·</span>
-            <a href="/contact" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">
-              Contact
-            </a>
+            <a href="/contact" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">Contact</a>
             <span className="text-zinc-700">·</span>
-            <button
-              onClick={() => setOpenModal("cgu")}
-              className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10"
-            >
-              CGU
-            </button>
+            <button onClick={() => setOpenModal("cgu")} className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">CGU</button>
             <span className="text-zinc-700">·</span>
-            <button
-              onClick={() => setOpenModal("confidentialite")}
-              className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10"
-            >
-              Politique de confidentialité
-            </button>
-            <span className="text-zinc-700">·</span>
-            <a href="/politique-confidentialite" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">
-              Page dédiée
-            </a>
+            <a href="/politique-confidentialite" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">Politique de confidentialité</a>
           </nav>
-          <p className="text-xs text-zinc-600 mt-2 text-center max-w-xl mx-auto">
-            Les contenus de ce site sont fournis à titre informatif uniquement et ne constituent pas des conseils financiers, fiscaux ou juridiques.
+
+          {/* Ligne 2 — copyright + disclaimer */}
+          <p className="text-xs text-zinc-600 text-center">
+            © 2026 <span className="text-zinc-400 font-medium">Calculette<span className="text-[#C9A84C]">Immo</span></span> — Estimations à titre indicatif. Les contenus de ce site ne constituent pas des conseils financiers, fiscaux ou juridiques.
           </p>
+
         </div>
       </footer>
 

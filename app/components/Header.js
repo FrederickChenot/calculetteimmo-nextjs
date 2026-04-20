@@ -27,12 +27,18 @@ export default function Header() {
           </div>
         </div>
 
-        <nav>
+        <nav className="flex items-center gap-1">
           <Link
             href="/blog"
             className="text-sm font-semibold text-zinc-300 hover:text-[#C9A84C] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#C9A84C]/10"
           >
             Blog
+          </Link>
+          <Link href="/a-propos" className="text-sm font-semibold text-zinc-300 hover:text-[#C9A84C] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#C9A84C]/10">
+            À propos
+          </Link>
+          <Link href="/contact" className="text-sm font-semibold text-zinc-300 hover:text-[#C9A84C] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#C9A84C]/10">
+            Contact
           </Link>
         </nav>
       </div>

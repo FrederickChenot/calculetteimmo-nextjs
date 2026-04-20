@@ -135,6 +135,14 @@ export default function Footer() {
             — Estimations à titre indicatif
           </p>
           <nav className="flex items-center gap-1 text-xs text-zinc-500">
+            <a href="/a-propos" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">
+              À propos
+            </a>
+            <span className="text-zinc-700">·</span>
+            <a href="/contact" className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10">
+              Contact
+            </a>
+            <span className="text-zinc-700">·</span>
             <button
               onClick={() => setOpenModal("cgu")}
               className="hover:text-[#C9A84C] transition-colors px-2 py-1 rounded hover:bg-[#C9A84C]/10"

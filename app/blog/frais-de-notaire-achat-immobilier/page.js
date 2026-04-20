@@ -28,7 +28,6 @@ export default function ArticleFraisNotaire() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Frais de notaire lors d'un achat immobilier : tout comprendre
           </h1>
-          <ViewCounter slug="frais-de-notaire-achat-immobilier" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Souvent appelés « frais d'acquisition », les frais de notaire représentent un poste
             budgétaire incontournable lors d'un achat immobilier. Voici comment les calculer
@@ -187,6 +186,13 @@ export default function ArticleFraisNotaire() {
             >
               Calculer mes frais de notaire →
             </Link>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-[#2a4a4d] flex items-center justify-between">
+            <Link href="/blog" className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
+              ← Retour au blog
+            </Link>
+            <ViewCounter slug="frais-de-notaire-achat-immobilier" />
           </div>
         </article>
       </div>

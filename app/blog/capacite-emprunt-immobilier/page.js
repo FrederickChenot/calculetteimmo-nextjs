@@ -28,7 +28,6 @@ export default function ArticleCapaciteEmprunt() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Capacité d'emprunt immobilier : comment la calculer ?
           </h1>
-          <ViewCounter slug="capacite-emprunt-immobilier" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Avant de visiter des biens ou de contacter une banque, il est essentiel de connaître
             votre capacité d'emprunt. C'est le montant maximum que vous pouvez financer par crédit
@@ -191,6 +190,13 @@ export default function ArticleCapaciteEmprunt() {
             >
               Estimer ma capacité d'emprunt →
             </Link>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-[#2a4a4d] flex items-center justify-between">
+            <Link href="/blog" className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
+              ← Retour au blog
+            </Link>
+            <ViewCounter slug="capacite-emprunt-immobilier" />
           </div>
         </article>
       </div>

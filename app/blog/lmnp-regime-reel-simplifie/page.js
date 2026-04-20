@@ -26,7 +26,6 @@ export default function ArticleLMNP() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             LMNP réel simplifié : amortissements, charges et liasse 2031
           </h1>
-          <ViewCounter slug="lmnp-regime-reel-simplifie" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Le régime réel simplifié est le plus avantageux pour un loueur meublé non professionnel.
             Bien utilisé, il permet de louer plusieurs années sans payer un centime d'impôt grâce aux
@@ -143,10 +142,11 @@ export default function ArticleLMNP() {
             </Link>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-[#2a4a4d]">
+          <div className="mt-6 pt-6 border-t border-[#2a4a4d] flex items-center justify-between">
             <Link href="/blog" className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
               ← Retour au blog
             </Link>
+            <ViewCounter slug="lmnp-regime-reel-simplifie" />
           </div>
         </article>
       </div>

@@ -26,7 +26,6 @@ export default function ArticleCryptoFiscalite() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Fiscalité crypto en France 2026 : ce qu'il faut déclarer
           </h1>
-          <ViewCounter slug="crypto-fiscalite-france-2026" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Beaucoup d'investisseurs crypto ignorent leurs obligations fiscales — et se retrouvent avec
             des redressements surprises. Voici les règles en vigueur en France pour 2026, expliquées
@@ -107,10 +106,11 @@ export default function ArticleCryptoFiscalite() {
             </div>
           </section>
 
-          <div className="mt-6 pt-6 border-t border-[#2a4a4d]">
+          <div className="mt-6 pt-6 border-t border-[#2a4a4d] flex items-center justify-between">
             <Link href="/blog" className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
               ← Retour au blog
             </Link>
+            <ViewCounter slug="crypto-fiscalite-france-2026" />
           </div>
         </article>
       </div>

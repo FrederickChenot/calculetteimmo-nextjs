@@ -26,7 +26,6 @@ export default function ArticleBitcoinHalving() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Bitcoin halving : historique, mécanisme et impact sur le prix
           </h1>
-          <ViewCounter slug="bitcoin-halving-impact-prix" />
           <p className="text-zinc-400 text-lg leading-relaxed">
             Tous les quatre ans environ, la récompense des mineurs Bitcoin est divisée par deux.
             Cet événement — le halving — est l'un des mécanismes les plus influents sur le prix du BTC.
@@ -108,10 +107,11 @@ export default function ArticleBitcoinHalving() {
             </div>
           </section>
 
-          <div className="mt-6 pt-6 border-t border-[#2a4a4d]">
+          <div className="mt-6 pt-6 border-t border-[#2a4a4d] flex items-center justify-between">
             <Link href="/blog" className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
               ← Retour au blog
             </Link>
+            <ViewCounter slug="bitcoin-halving-impact-prix" />
           </div>
         </article>
       </div>

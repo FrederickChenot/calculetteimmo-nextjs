@@ -92,10 +92,25 @@ function TransactionForm({ onAdd, onClose }) {
 
 // ── Simulateur plus-value ─────────────────────────────────
 function SimulateurPlusValue() {
+  const [crypto, setCrypto] = useState("");
   const [prixCession, setPrixCession] = useState("");
   const [quantiteCedee, setQuantiteCedee] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [prices, setPrices] = useState({});
+  const [loadingPrices, setLoadingPrices] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/crypto/prices")
+      .then(r => r.json())
+      .then(data => { setPrices(data); setLoadingPrices(false); });
+  }, []);
+
+  useEffect(() => {
+    if (crypto && prices[crypto]) {
+      setPrixCession(prices[crypto].toString());
+    }
+  }, [crypto, prices]);
 
   async function calculer() {
     if (!prixCession || !quantiteCedee) return;
@@ -103,7 +118,11 @@ function SimulateurPlusValue() {
     const res = await fetch("/api/crypto/plusvalue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prixCessionUnitaire: parseFloat(prixCession), quantiteCedee: parseFloat(quantiteCedee) }),
+      body: JSON.stringify({
+        prixCessionUnitaire: parseFloat(prixCession),
+        quantiteCedee: parseFloat(quantiteCedee),
+        crypto,
+      }),
     });
     const data = await res.json();
     setResult(data);
@@ -116,19 +135,44 @@ function SimulateurPlusValue() {
     <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6">
       <h3 className="text-lg font-bold text-white mb-1">Simulateur de plus-value</h3>
       <p className="text-xs text-zinc-400 mb-4">Méthode PMP — Article 150 VH bis CGI (Formulaire 2086)</p>
-      <div className="grid grid-cols-2 gap-3 mb-4">
+
+      {!loadingPrices && Object.keys(prices).length > 0 && (
+        <div className="flex gap-3 flex-wrap mb-4">
+          {Object.entries(prices).map(([c, p]) => p && (
+            <div key={c} className="bg-[#0d1f21] rounded-lg px-3 py-2 text-xs">
+              <span className="text-[#C9A84C] font-bold">{c}</span>
+              <span className="text-zinc-300 ml-2">{p.toLocaleString("fr-FR")} €</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <div>
-          <label className="text-xs text-zinc-400 mb-1 block">Prix de cession unitaire (€)</label>
-          <input type="number" step="any" placeholder="50000" value={prixCession} onChange={e => setPrixCession(e.target.value)} className={inputClass}/>
+          <label className="text-xs text-zinc-400 mb-1 block">Crypto à céder</label>
+          <select value={crypto} onChange={e => setCrypto(e.target.value)}
+            className={inputClass + " cursor-pointer"}>
+            <option value="">Sélectionner</option>
+            {Object.keys(prices).map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-zinc-400 mb-1 block">Prix de cession (€)</label>
+          <input type="number" step="any" placeholder="50000" value={prixCession}
+            onChange={e => setPrixCession(e.target.value)} className={inputClass}/>
         </div>
         <div>
           <label className="text-xs text-zinc-400 mb-1 block">Quantité à céder</label>
-          <input type="number" step="any" placeholder="0.1" value={quantiteCedee} onChange={e => setQuantiteCedee(e.target.value)} className={inputClass}/>
+          <input type="number" step="any" placeholder="0.1" value={quantiteCedee}
+            onChange={e => setQuantiteCedee(e.target.value)} className={inputClass}/>
         </div>
       </div>
+
       <button onClick={calculer} disabled={loading}
         className="w-full bg-[#C9A84C] text-black font-bold py-2 rounded-lg hover:bg-[#d4b86a] transition-colors text-sm mb-4">
-        {loading ? "Calcul..." : "Calculer la plus-value"}
+        {loading ? "Calcul en cours..." : "Calculer la plus-value"}
       </button>
 
       {result && !result.error && (
@@ -138,7 +182,7 @@ function SimulateurPlusValue() {
               ["Prix de cession total", `${result.prixCessionTotal.toLocaleString("fr-FR")} €`, "text-white"],
               ["Prix de revient (PMP)", `${result.prixRevientCession.toLocaleString("fr-FR")} €`, "text-white"],
               ["Valeur globale portefeuille", `${result.valeurGlobalePortefeuille.toLocaleString("fr-FR")} €`, "text-zinc-400"],
-              ["Quantité totale détenue", `${result.quantiteTotale}`, "text-zinc-400"],
+              ["Prix de revient global", `${result.prixRevientGlobal.toLocaleString("fr-FR")} €`, "text-zinc-400"],
             ].map(([label, val, cls]) => (
               <div key={label} className="bg-[#12282A] rounded-lg p-3">
                 <p className="text-xs text-zinc-500 mb-1">{label}</p>

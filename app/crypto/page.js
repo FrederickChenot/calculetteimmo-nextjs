@@ -190,20 +190,16 @@ function Portefeuille({ transactions, prices }) {
 }
 
 // ── Simulateur plus-value ─────────────────────────────────
-function SimulateurPlusValue() {
+function SimulateurPlusValue({ transactions, prices }) {
+  const cryptosDisponibles = [...new Set(
+    transactions.filter(t => t.type === "achat").map(t => t.crypto)
+  )];
+
   const [crypto, setCrypto] = useState("");
   const [prixCession, setPrixCession] = useState("");
   const [quantiteCedee, setQuantiteCedee] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [prices, setPrices] = useState({});
-  const [loadingPrices, setLoadingPrices] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/crypto/prices")
-      .then(r => r.json())
-      .then(data => { setPrices(data); setLoadingPrices(false); });
-  }, []);
 
   useEffect(() => {
     if (crypto && prices[crypto]) {
@@ -235,7 +231,7 @@ function SimulateurPlusValue() {
       <h3 className="text-lg font-bold text-white mb-1">Simulateur de plus-value</h3>
       <p className="text-xs text-zinc-400 mb-4">Méthode PMP — Article 150 VH bis CGI (Formulaire 2086)</p>
 
-      {!loadingPrices && Object.keys(prices).length > 0 && (
+      {Object.keys(prices).length > 0 && (
         <div className="flex gap-3 flex-wrap mb-4">
           {Object.entries(prices).map(([c, p]) => p && (
             <div key={c} className="bg-[#0d1f21] rounded-lg px-3 py-2 text-xs">
@@ -252,7 +248,7 @@ function SimulateurPlusValue() {
           <select value={crypto} onChange={e => setCrypto(e.target.value)}
             className={inputClass + " cursor-pointer"}>
             <option value="">Sélectionner</option>
-            {Object.keys(prices).map(c => (
+            {cryptosDisponibles.map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
@@ -311,6 +307,62 @@ function SimulateurPlusValue() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Import CSV ───────────────────────────────────────────
+function ImportCSV({ onImport }) {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    setMessage(null);
+
+    const text = await file.text();
+    const lines = text.split("\n").filter(l => l.trim());
+    const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
+
+    const transactions = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(",").map(v => v.trim().replace(/"/g, ""));
+      if (values.length < 4) continue;
+
+      const tx = {};
+      headers.forEach((h, idx) => { tx[h] = values[idx]; });
+
+      transactions.push({
+        type: (tx.type || tx.side || "achat").toLowerCase(),
+        crypto: (tx.crypto || tx.symbol || tx.asset || "BTC").toUpperCase(),
+        quantite: parseFloat(tx.quantite || tx.quantity || tx.amount || 0),
+        prix_unitaire: parseFloat(tx.prix_unitaire || tx.price || tx.prix || 0),
+        date_transaction: tx.date || tx.date_transaction || tx.time || new Date().toISOString(),
+        plateforme: tx.plateforme || tx.platform || tx.exchange || "",
+        notes: tx.notes || tx.note || "",
+      });
+    }
+
+    const res = await fetch("/api/crypto/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transactions }),
+    });
+    const data = await res.json();
+    setMessage(`${data.imported} transactions importées !`);
+    onImport();
+    setLoading(false);
+  }
+
+  return (
+    <div>
+      <label className="cursor-pointer inline-flex items-center gap-2 border border-[#2a4a4d] text-zinc-300 font-semibold px-4 py-2 rounded-lg text-sm hover:border-[#C9A84C] hover:text-[#C9A84C] transition-colors">
+        {loading ? "Import..." : "📥 Importer CSV"}
+        <input type="file" accept=".csv" onChange={handleFile} className="hidden" disabled={loading}/>
+      </label>
+      {message && <p className="text-emerald-400 text-xs mt-2">{message}</p>}
     </div>
   );
 }
@@ -389,16 +441,19 @@ function Dashboard({ session, onLogout }) {
       <Portefeuille transactions={transactions} prices={prices} />
 
       {/* Simulateur */}
-      <SimulateurPlusValue />
+      <SimulateurPlusValue transactions={transactions} prices={prices} />
 
       {/* Transactions */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-white">Mes transactions</h2>
-          <button onClick={() => setShowForm(true)}
-            className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
-            + Ajouter
-          </button>
+          <div className="flex items-center gap-3">
+            <ImportCSV onImport={fetchTransactions} />
+            <button onClick={() => setShowForm(true)}
+              className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
+              + Ajouter
+            </button>
+          </div>
         </div>
 
         {loading && <p className="text-zinc-400 text-sm">Chargement...</p>}

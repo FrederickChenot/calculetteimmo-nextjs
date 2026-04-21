@@ -90,6 +90,105 @@ function TransactionForm({ onAdd, onClose }) {
   );
 }
 
+// ── Portefeuille ─────────────────────────────────────────
+function Portefeuille({ transactions, prices }) {
+  const portfolio = {};
+
+  for (const tx of transactions) {
+    const c = tx.crypto;
+    if (!portfolio[c]) portfolio[c] = { quantite: 0, prixRevient: 0 };
+
+    if (tx.type === "achat") {
+      portfolio[c].prixRevient += Number(tx.quantite) * Number(tx.prix_unitaire);
+      portfolio[c].quantite += Number(tx.quantite);
+    } else if (tx.type === "vente") {
+      const fraction = Number(tx.quantite) / portfolio[c].quantite;
+      portfolio[c].prixRevient *= (1 - fraction);
+      portfolio[c].quantite -= Number(tx.quantite);
+    }
+  }
+
+  const lignes = Object.entries(portfolio).filter(([, v]) => v.quantite > 0.000001);
+  if (lignes.length === 0) return null;
+
+  const totalInvesti = lignes.reduce((s, [, v]) => s + v.prixRevient, 0);
+  const totalActuel = lignes.reduce((s, [c, v]) => s + v.quantite * (prices[c] || 0), 0);
+  const plusValueLatente = totalActuel - totalInvesti;
+
+  return (
+    <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6">
+      <h3 className="text-lg font-bold text-white mb-1">Mon portefeuille</h3>
+      <p className="text-xs text-zinc-400 mb-4">Valorisation en temps réel — CoinGecko</p>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#2a4a4d]">
+              {["Crypto", "Quantité", "Prix moyen", "Prix actuel", "Valeur", "P/V latente", "Perf."].map(h => (
+                <th key={h} className="text-left px-3 py-2 text-xs text-zinc-400 font-medium">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {lignes.map(([c, v]) => {
+              const prixMoyen = v.quantite > 0 ? v.prixRevient / v.quantite : 0;
+              const prixActuel = prices[c] || 0;
+              const valeur = v.quantite * prixActuel;
+              const pvLatente = valeur - v.prixRevient;
+              const perf = v.prixRevient > 0 ? ((valeur - v.prixRevient) / v.prixRevient) * 100 : 0;
+
+              return (
+                <tr key={c} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21] transition-colors">
+                  <td className="px-3 py-3 font-bold text-[#C9A84C]">{c}</td>
+                  <td className="px-3 py-3 text-zinc-300">
+                    {v.quantite.toLocaleString("fr-FR", { maximumFractionDigits: 8 })}
+                  </td>
+                  <td className="px-3 py-3 text-zinc-300">
+                    {prixMoyen.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €
+                  </td>
+                  <td className="px-3 py-3 text-zinc-300">
+                    {prixActuel > 0 ? `${prixActuel.toLocaleString("fr-FR")} €` : "—"}
+                  </td>
+                  <td className="px-3 py-3 text-white font-medium">
+                    {prixActuel > 0 ? `${valeur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €` : "—"}
+                  </td>
+                  <td className={`px-3 py-3 font-medium ${pvLatente >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    {prixActuel > 0 ? `${pvLatente >= 0 ? "+" : ""}${pvLatente.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €` : "—"}
+                  </td>
+                  <td className={`px-3 py-3 font-medium ${perf >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    {prixActuel > 0 ? `${perf >= 0 ? "+" : ""}${perf.toFixed(2)} %` : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-[#2a4a4d] grid grid-cols-3 gap-4">
+        <div className="bg-[#0d1f21] rounded-lg p-3">
+          <p className="text-xs text-zinc-400 mb-1">Total investi</p>
+          <p className="text-base font-bold text-white">
+            {totalInvesti.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €
+          </p>
+        </div>
+        <div className="bg-[#0d1f21] rounded-lg p-3">
+          <p className="text-xs text-zinc-400 mb-1">Valeur actuelle</p>
+          <p className="text-base font-bold text-white">
+            {totalActuel.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €
+          </p>
+        </div>
+        <div className="bg-[#0d1f21] rounded-lg p-3">
+          <p className="text-xs text-zinc-400 mb-1">Plus-value latente</p>
+          <p className={`text-base font-bold ${plusValueLatente >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {plusValueLatente >= 0 ? "+" : ""}{plusValueLatente.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Simulateur plus-value ─────────────────────────────────
 function SimulateurPlusValue() {
   const [crypto, setCrypto] = useState("");
@@ -221,8 +320,17 @@ function Dashboard({ session, onLogout }) {
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [prices, setPrices] = useState({});
 
   useEffect(() => { fetchTransactions(); }, []);
+
+  useEffect(() => {
+    if (transactions.length > 0) {
+      fetch("/api/crypto/prices")
+        .then(r => r.json())
+        .then(setPrices);
+    }
+  }, [transactions]);
 
   async function fetchTransactions() {
     const res = await fetch("/api/crypto/transactions");
@@ -276,6 +384,9 @@ function Dashboard({ session, onLogout }) {
           </div>
         ))}
       </div>
+
+      {/* Portefeuille */}
+      <Portefeuille transactions={transactions} prices={prices} />
 
       {/* Simulateur */}
       <SimulateurPlusValue />

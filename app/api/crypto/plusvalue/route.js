@@ -1,13 +1,6 @@
 import { sqlCrypto } from "@/app/lib/cryptoDb";
-import jwt from "jsonwebtoken";
-
-function getUser(request) {
-  const auth = request.headers.get("authorization");
-  if (!auth) return null;
-  try {
-    return jwt.verify(auth.replace("Bearer ", ""), process.env.CRYPTO_JWT_SECRET);
-  } catch { return null; }
-}
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/crypto/auth/[...nextauth]/route";
 
 // Méthode PMP globale — Article 150 VH bis CGI — Formulaire 2086
 function calculerPlusValue(transactions, prixCessionUnitaire, quantiteCedee) {
@@ -44,13 +37,13 @@ function calculerPlusValue(transactions, prixCessionUnitaire, quantiteCedee) {
 }
 
 export async function POST(request) {
-  const user = getUser(request);
-  if (!user) return Response.json({ error: "Non autorisé" }, { status: 401 });
+  const session = await getServerSession(authOptions);
+  if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
   const { prixCessionUnitaire, quantiteCedee } = await request.json();
 
   const transactions = await sqlCrypto`
-    SELECT * FROM crypto_transactions WHERE user_id = ${user.userId} ORDER BY date_transaction ASC
+    SELECT * FROM crypto_transactions WHERE user_id = ${session.userId} ORDER BY date_transaction ASC
   `;
 
   const result = calculerPlusValue(transactions, prixCessionUnitaire, quantiteCedee);

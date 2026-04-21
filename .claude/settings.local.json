@@ -12,7 +12,16 @@
       "WebFetch(domain:developer.webstat.banque-france.fr)",
       "WebFetch(domain:data.ecb.europa.eu)",
       "WebFetch(domain:data-api.ecb.europa.eu)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(node *)",
+      "Bash(git rm *)",
+      "Bash(unzip -o files.zip -d files_extracted/)",
+      "Read(//c/d/Users/Fred/Downloads/**)",
+      "Bash(openssl rand *)"
     ]
   }
 }

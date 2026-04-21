@@ -98,6 +98,12 @@ export default function CryptoLogin() {
             className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
             {mode === "login" ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
           </button>
+          {mode === "login" && (
+            <button onClick={() => router.push("/crypto/reset-password")}
+              className="text-xs text-zinc-500 hover:text-[#C9A84C] transition-colors">
+              Mot de passe oublié ?
+            </button>
+          )}
         </div>
       </div>
     </main>

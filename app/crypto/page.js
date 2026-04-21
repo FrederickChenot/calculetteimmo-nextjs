@@ -190,7 +190,7 @@ function Portefeuille({ transactions, prices }) {
 }
 
 // ── Simulateur plus-value ─────────────────────────────────
-function SimulateurPlusValue({ transactions, prices }) {
+function SimulateurPlusValue({ transactions = [], prices = {} }) {
   const cryptosDisponibles = [...new Set(
     transactions.filter(t => t.type === "achat").map(t => t.crypto)
   )];
@@ -245,11 +245,13 @@ function SimulateurPlusValue({ transactions, prices }) {
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div>
           <label className="text-xs text-zinc-400 mb-1 block">Crypto à céder</label>
-          <select value={crypto} onChange={e => setCrypto(e.target.value)}
-            className={inputClass + " cursor-pointer"}>
+          <select value={crypto} onChange={e => {
+            setCrypto(e.target.value);
+            if (prices[e.target.value]) setPrixCession(prices[e.target.value].toString());
+          }} className={inputClass + " cursor-pointer"}>
             <option value="">Sélectionner</option>
             {cryptosDisponibles.map(c => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>{c}{prices[c] ? ` — ${prices[c].toLocaleString("fr-FR")} €` : ""}</option>
             ))}
           </select>
         </div>

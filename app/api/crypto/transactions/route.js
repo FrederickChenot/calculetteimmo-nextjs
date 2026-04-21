@@ -24,8 +24,7 @@ export async function POST(request) {
   `;
 
   if (type === "vente") {
-    console.log("Type de transaction:", type);
-    console.log("Insertion plus-value...");
+    console.log("Vente détectée, calcul plus-value...");
     const allTx = await sqlCrypto`
       SELECT * FROM crypto_transactions WHERE user_id = ${session.userId} ORDER BY date_transaction ASC
     `;
@@ -73,6 +72,8 @@ export async function POST(request) {
       INSERT INTO crypto_plusvalues (user_id, transaction_id, annee, crypto, quantite_cedee, prix_cession_total, prix_revient_cession, plus_value, impot_estime)
       VALUES (${session.userId}, ${rows[0].id}, ${annee}, ${crypto.toUpperCase()}, ${quantite}, ${prixCessionTotal}, ${prixRevientCession}, ${plusValue}, ${impot})
     `;
+    console.log("valeurGlobale:", valeurGlobale);
+    console.log("plusValue:", plusValue);
     console.log("Plus-value insérée:", { annee, crypto, plusValue, impot });
   }
 

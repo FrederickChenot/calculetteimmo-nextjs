@@ -344,6 +344,7 @@ function ImportCSV({ onImport }) {
         date_transaction: tx.date || tx.date_transaction || tx.time || new Date().toISOString(),
         plateforme: tx.plateforme || tx.platform || tx.exchange || "",
         notes: tx.notes || tx.note || "",
+        external_id: tx["id externe"] || tx.external_id || tx.id || null,
       });
     }
 

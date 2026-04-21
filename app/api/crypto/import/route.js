@@ -13,11 +13,13 @@ export async function POST(request) {
     try {
       await sqlCrypto`
         INSERT INTO crypto_transactions
-        (user_id, type, crypto, quantite, prix_unitaire, date_transaction, plateforme, notes)
+        (user_id, type, crypto, quantite, prix_unitaire, date_transaction, plateforme, notes, external_id)
         VALUES (
           ${session.userId}, ${tx.type}, ${tx.crypto}, ${tx.quantite},
-          ${tx.prix_unitaire}, ${tx.date_transaction}, ${tx.plateforme || ""}, ${tx.notes || ""}
+          ${tx.prix_unitaire}, ${tx.date_transaction}, ${tx.plateforme || ""},
+          ${tx.notes || ""}, ${tx.external_id || null}
         )
+        ON CONFLICT (external_id) DO NOTHING
       `;
       imported++;
     } catch (e) { console.error(e); }

@@ -305,8 +305,9 @@ export default function CryptoPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/crypto/login");
-  }, [status, router]);
+    if (status === "unauthenticated" || (status === "authenticated" && session?.role !== "crypto"))
+      router.push("/crypto/login");
+  }, [status, session, router]);
 
   if (status === "loading") return null;
   if (!session) return null;

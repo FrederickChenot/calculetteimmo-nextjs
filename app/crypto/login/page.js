@@ -38,7 +38,7 @@ export default function CryptoLogin() {
       return;
     }
 
-    const res = await signIn("credentials", { email, password, redirect: false });
+    const res = await signIn("crypto-credentials", { email, password, redirect: false });
     if (res?.error) {
       setError("Email ou mot de passe incorrect");
     } else {

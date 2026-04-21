@@ -1,6 +1,6 @@
 import { sqlCrypto } from "@/app/lib/cryptoDb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/crypto/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // Méthode PMP globale — Article 150 VH bis CGI — Formulaire 2086
 function calculerPlusValue(transactions, prixCessionUnitaire, quantiteCedee) {

@@ -13,7 +13,7 @@ export default function LoginPage() {
   async function handleSubmit() {
     setLoading(true);
     setError(null);
-    const res = await signIn("credentials", {
+    const res = await signIn("admin-credentials", {
       email,
       password,
       redirect: false,

@@ -48,8 +48,17 @@ export async function POST(request) {
     let valeurGlobale = 0;
     for (const [c, qte] of Object.entries(quantites)) {
       if (qte > 0) {
-        const prix = c === crypto.toUpperCase() ? Number(prix_unitaire) : 0;
-        valeurGlobale += qte * prix;
+        if (c === crypto.toUpperCase()) {
+          valeurGlobale += qte * Number(prix_unitaire);
+        } else {
+          const dernierAchat = await sqlCrypto`
+            SELECT prix_unitaire FROM crypto_transactions
+            WHERE user_id = ${session.userId} AND crypto = ${c} AND type = 'achat'
+            ORDER BY date_transaction DESC LIMIT 1
+          `;
+          const prixRef = dernierAchat.length > 0 ? Number(dernierAchat[0].prix_unitaire) : 0;
+          valeurGlobale += qte * prixRef;
+        }
       }
     }
 

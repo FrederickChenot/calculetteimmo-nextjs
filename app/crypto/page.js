@@ -389,6 +389,13 @@ function HistoriquePlusValues() {
     });
     const data = await res.json();
 
+    function formatEur(n) {
+      return Number(n).toFixed(2).replace(".", ",") + " €";
+    }
+    function formatQte(n) {
+      return Number(n).toFixed(8).replace(/\.?0+$/, "");
+    }
+
     const { default: jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
 
@@ -396,47 +403,47 @@ function HistoriquePlusValues() {
 
     doc.setFontSize(18);
     doc.setTextColor(201, 168, 76);
-    doc.text("Déclaration Crypto — Formulaire 2086", 14, 20);
+    doc.text("Declaration Crypto - Formulaire 2086", 14, 20);
 
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Année fiscale : ${data.annee}`, 14, 32);
+    doc.text(`Annee fiscale : ${data.annee}`, 14, 32);
     doc.text(`Contribuable : ${data.email}`, 14, 40);
-    doc.text(`Généré le : ${new Date().toLocaleDateString("fr-FR")}`, 14, 48);
+    doc.text(`Genere le : ${new Date().toLocaleDateString("fr-FR")}`, 14, 48);
 
     doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
-    doc.text("Document indicatif — À vérifier avec un expert-comptable ou conseiller fiscal", 14, 56);
+    doc.text("Document indicatif - A verifier avec un expert-comptable ou conseiller fiscal", 14, 56);
 
     doc.setFontSize(13);
     doc.setTextColor(0, 0, 0);
-    doc.text("Récapitulatif annuel", 14, 68);
+    doc.text("Recapitulatif annuel", 14, 68);
 
     autoTable(doc, {
       startY: 72,
       head: [["", "Montant"]],
       body: [
-        ["Total des cessions", `${data.totaux.totalCessions.toLocaleString("fr-FR")} €`],
-        ["Plus-value nette totale", `${data.totaux.totalPlusValue.toLocaleString("fr-FR")} €`],
-        ["Impôt estimé (flat tax 30%)", `${data.totaux.totalImpot.toLocaleString("fr-FR")} €`],
+        ["Total des cessions", formatEur(data.totaux.totalCessions)],
+        ["Plus-value nette totale", formatEur(data.totaux.totalPlusValue)],
+        ["Impot estime (flat tax 30%)", formatEur(data.totaux.totalImpot)],
       ],
       theme: "grid",
       headStyles: { fillColor: [201, 168, 76], textColor: [0, 0, 0] },
     });
 
     doc.setFontSize(13);
-    doc.text("Détail des cessions", 14, doc.lastAutoTable.finalY + 15);
+    doc.text("Detail des cessions", 14, doc.lastAutoTable.finalY + 15);
 
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 19,
-      head: [["Crypto", "Qté cédée", "Prix cession", "Prix revient", "Plus-value", "Impôt estimé"]],
+      head: [["Crypto", "Qte cedee", "Prix cession", "Prix revient", "Plus-value", "Impot estime"]],
       body: data.plusvalues.map(p => [
         p.crypto,
-        Number(p.quantite_cedee).toLocaleString("fr-FR", { maximumFractionDigits: 8 }),
-        `${Number(p.prix_cession_total).toLocaleString("fr-FR")} €`,
-        `${Number(p.prix_revient_cession).toLocaleString("fr-FR")} €`,
-        `${Number(p.plus_value) >= 0 ? "+" : ""}${Number(p.plus_value).toLocaleString("fr-FR")} €`,
-        `${Number(p.impot_estime).toLocaleString("fr-FR")} €`,
+        formatQte(p.quantite_cedee),
+        formatEur(p.prix_cession_total),
+        formatEur(p.prix_revient_cession),
+        `${Number(p.plus_value) >= 0 ? "+" : ""}${formatEur(p.plus_value)}`,
+        formatEur(p.impot_estime),
       ]),
       theme: "striped",
       headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
@@ -445,9 +452,9 @@ function HistoriquePlusValues() {
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text("Calcul selon la méthode PMP — Article 150 VH bis du CGI", 14, finalY);
-    doc.text("Flat tax 30% (12,8% IR + 17,2% prélèvements sociaux)", 14, finalY + 5);
-    doc.text("Ce document est fourni à titre indicatif et ne constitue pas un conseil fiscal.", 14, finalY + 10);
+    doc.text("Calcul selon la methode PMP - Article 150 VH bis du CGI", 14, finalY);
+    doc.text("Flat tax 30% (12,8% IR + 17,2% prelevements sociaux)", 14, finalY + 5);
+    doc.text("Ce document est fourni a titre indicatif et ne constitue pas un conseil fiscal.", 14, finalY + 10);
 
     doc.save(`crypto-declaration-${data.annee}.pdf`);
     setExporting(false);

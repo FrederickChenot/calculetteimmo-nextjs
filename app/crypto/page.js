@@ -367,6 +367,150 @@ function ImportCSV({ onImport }) {
   );
 }
 
+// ── Historique plus-values ───────────────────────────────
+function HistoriquePlusValues() {
+  const [plusvalues, setPlusvalues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [anneeExport, setAnneeExport] = useState(new Date().getFullYear());
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/crypto/plusvalues")
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setPlusvalues(data); setLoading(false); });
+  }, []);
+
+  async function exportPDF() {
+    setExporting(true);
+    const res = await fetch("/api/crypto/export-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ annee: anneeExport }),
+    });
+    const data = await res.json();
+
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.setTextColor(201, 168, 76);
+    doc.text("Déclaration Crypto — Formulaire 2086", 14, 20);
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Année fiscale : ${data.annee}`, 14, 32);
+    doc.text(`Contribuable : ${data.email}`, 14, 40);
+    doc.text(`Généré le : ${new Date().toLocaleDateString("fr-FR")}`, 14, 48);
+
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Document indicatif — À vérifier avec un expert-comptable ou conseiller fiscal", 14, 56);
+
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Récapitulatif annuel", 14, 68);
+
+    autoTable(doc, {
+      startY: 72,
+      head: [["", "Montant"]],
+      body: [
+        ["Total des cessions", `${data.totaux.totalCessions.toLocaleString("fr-FR")} €`],
+        ["Plus-value nette totale", `${data.totaux.totalPlusValue.toLocaleString("fr-FR")} €`],
+        ["Impôt estimé (flat tax 30%)", `${data.totaux.totalImpot.toLocaleString("fr-FR")} €`],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [201, 168, 76], textColor: [0, 0, 0] },
+    });
+
+    doc.setFontSize(13);
+    doc.text("Détail des cessions", 14, doc.lastAutoTable.finalY + 15);
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 19,
+      head: [["Crypto", "Qté cédée", "Prix cession", "Prix revient", "Plus-value", "Impôt estimé"]],
+      body: data.plusvalues.map(p => [
+        p.crypto,
+        Number(p.quantite_cedee).toLocaleString("fr-FR", { maximumFractionDigits: 8 }),
+        `${Number(p.prix_cession_total).toLocaleString("fr-FR")} €`,
+        `${Number(p.prix_revient_cession).toLocaleString("fr-FR")} €`,
+        `${Number(p.plus_value) >= 0 ? "+" : ""}${Number(p.plus_value).toLocaleString("fr-FR")} €`,
+        `${Number(p.impot_estime).toLocaleString("fr-FR")} €`,
+      ]),
+      theme: "striped",
+      headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Calcul selon la méthode PMP — Article 150 VH bis du CGI", 14, finalY);
+    doc.text("Flat tax 30% (12,8% IR + 17,2% prélèvements sociaux)", 14, finalY + 5);
+    doc.text("Ce document est fourni à titre indicatif et ne constitue pas un conseil fiscal.", 14, finalY + 10);
+
+    doc.save(`crypto-declaration-${data.annee}.pdf`);
+    setExporting(false);
+  }
+
+  const annees = [...new Set(plusvalues.map(p => p.annee))].sort((a, b) => b - a);
+
+  if (loading || plusvalues.length === 0) return null;
+
+  return (
+    <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-bold text-white">Plus-values réalisées</h3>
+          <p className="text-xs text-zinc-400">Historique des cessions imposables</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <select value={anneeExport} onChange={e => setAnneeExport(Number(e.target.value))}
+            className="rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-3 py-1.5 text-zinc-100 text-sm focus:outline-none focus:border-[#C9A84C]">
+            {annees.map(a => <option key={a} value={a}>{a}</option>)}
+            {!annees.includes(new Date().getFullYear()) && (
+              <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
+            )}
+          </select>
+          <button onClick={exportPDF} disabled={exporting}
+            className="bg-[#C9A84C] text-black font-bold px-4 py-1.5 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
+            {exporting ? "..." : "📄 Export PDF"}
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#2a4a4d]">
+              {["Année", "Crypto", "Qté cédée", "Prix cession", "Prix revient", "Plus-value", "Impôt estimé"].map(h => (
+                <th key={h} className="text-left px-3 py-2 text-xs text-zinc-400 font-medium">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {plusvalues.map(p => (
+              <tr key={p.id} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21] transition-colors">
+                <td className="px-3 py-3 text-zinc-400">{p.annee}</td>
+                <td className="px-3 py-3 font-bold text-[#C9A84C]">{p.crypto}</td>
+                <td className="px-3 py-3 text-zinc-300">{Number(p.quantite_cedee).toLocaleString("fr-FR", { maximumFractionDigits: 8 })}</td>
+                <td className="px-3 py-3 text-zinc-300">{Number(p.prix_cession_total).toLocaleString("fr-FR")} €</td>
+                <td className="px-3 py-3 text-zinc-300">{Number(p.prix_revient_cession).toLocaleString("fr-FR")} €</td>
+                <td className={`px-3 py-3 font-medium ${Number(p.plus_value) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {Number(p.plus_value) >= 0 ? "+" : ""}{Number(p.plus_value).toLocaleString("fr-FR")} €
+                </td>
+                <td className="px-3 py-3 text-[#C9A84C] font-medium">
+                  {Number(p.impot_estime).toLocaleString("fr-FR")} €
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── Dashboard principal ───────────────────────────────────
 function Dashboard({ session, onLogout }) {
   const [transactions, setTransactions] = useState([]);
@@ -442,6 +586,9 @@ function Dashboard({ session, onLogout }) {
 
       {/* Simulateur */}
       <SimulateurPlusValue transactions={transactions} prices={prices} />
+
+      {/* Historique plus-values */}
+      <HistoriquePlusValues />
 
       {/* Transactions */}
       <div>

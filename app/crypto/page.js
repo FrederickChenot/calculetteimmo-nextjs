@@ -326,26 +326,59 @@ function ImportCSV({ onImport }) {
 
     const text = await file.text();
     const lines = text.split("\n").filter(l => l.trim());
-    const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
+
+    function normalize(str) {
+      return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    }
+
+    const rawHeaders = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
+    const headers = rawHeaders.map(normalize);
+
+    function getCol(row, name) {
+      const idx = headers.indexOf(normalize(name));
+      return idx >= 0 ? row[idx]?.replace(/"/g, "").trim() : "";
+    }
 
     const transactions = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map(v => v.trim().replace(/"/g, ""));
-      if (values.length < 4) continue;
 
-      const tx = {};
-      headers.forEach((h, idx) => { tx[h] = values[idx]; });
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(",").map(v => v.replace(/"/g, "").trim());
+      if (row.length < 4) continue;
+
+      const type = getCol(row, "Type");
+      const monnaieRecue = getCol(row, "Monnaie ou jeton recu");
+
+      if (!type.toLowerCase().includes("change")) continue;
+      if (monnaieRecue !== "BTC") continue;
+
+      const quantite = parseFloat(getCol(row, "Montant recu") || 0);
+      const montantEur = parseFloat(getCol(row, "Montant envoye") || 0);
+      const prixJeton = parseFloat(getCol(row, "Prix du jeton du montant recu") || 0);
+      const date = getCol(row, "Date") || new Date().toISOString();
+      const externalId = getCol(row, "ID Externe") || null;
+
+      if (quantite <= 0 || montantEur <= 0) continue;
+
+      const prixReel = prixJeton > 0 ? prixJeton : montantEur / quantite;
 
       transactions.push({
-        type: (tx.type || tx.side || "achat").toLowerCase(),
-        crypto: (tx.crypto || tx.symbol || tx.asset || "BTC").toUpperCase(),
-        quantite: parseFloat(tx.quantite || tx.quantity || tx.amount || 0),
-        prix_unitaire: parseFloat(tx.prix_unitaire || tx.price || tx.prix || 0),
-        date_transaction: tx.date || tx.date_transaction || tx.time || new Date().toISOString(),
-        plateforme: tx.plateforme || tx.platform || tx.exchange || "",
-        notes: tx.notes || tx.note || "",
-        external_id: tx["id externe"] || tx.external_id || tx.id || null,
+        type: "achat",
+        crypto: "BTC",
+        quantite,
+        prix_unitaire: Math.round(prixReel * 100) / 100,
+        date_transaction: date,
+        plateforme: "Bitstack",
+        notes: getCol(row, "Description") || "",
+        external_id: externalId,
       });
+    }
+
+    console.log("Transactions trouvées:", transactions.length);
+
+    if (transactions.length === 0) {
+      setMessage("Aucune transaction trouvée. Vérifiez le format du fichier.");
+      setLoading(false);
+      return;
     }
 
     const res = await fetch("/api/crypto/import", {
@@ -354,9 +387,10 @@ function ImportCSV({ onImport }) {
       body: JSON.stringify({ transactions }),
     });
     const data = await res.json();
-    setMessage(`${data.imported} transactions importées !`);
+    setMessage(`✅ ${data.imported} transactions importées !`);
     onImport();
     setLoading(false);
+    e.target.value = "";
   }
 
   return (

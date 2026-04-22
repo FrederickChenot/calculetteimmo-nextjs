@@ -106,6 +106,19 @@ export default function ArticleCryptoFiscalite() {
             </div>
           </section>
 
+          <div className="mt-8 bg-[#0d1f21] border border-[#C9A84C]/20 rounded-xl p-5">
+            <p className="text-sm font-semibold text-white mb-1">Commencer à investir en Bitcoin</p>
+            <p className="text-xs text-zinc-400 leading-relaxed mb-4">
+              Bitstack permet d'acheter du Bitcoin facilement, en DCA automatique depuis 1€.
+              En utilisant ce lien, vous recevez <strong className="text-[#C9A84C]">5 € en Bitcoin</strong> offerts à l'inscription.
+            </p>
+            <a href="https://bitstack-app.com/referral/CVXsenOtiMlY" target="_blank" rel="noopener noreferrer"
+              className="inline-block bg-[#C9A84C] text-black font-bold px-6 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
+              Créer un compte Bitstack →
+            </a>
+            <p className="text-xs text-zinc-600 mt-3">Lien partenaire — je perçois une commission si vous vous inscrivez via ce lien.</p>
+          </div>
+
           <div className="mt-6 pt-6 border-t border-[#2a4a4d] flex items-center justify-between">
             <Link href="/blog" className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
               ← Retour au blog

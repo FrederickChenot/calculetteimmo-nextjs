@@ -60,6 +60,15 @@ export default function APropos() {
             >
               ❤️ Soutenir sur Tipeee
             </a>
+            <div className="mt-6 p-4 bg-[#0d1f21] border border-[#C9A84C]/20 rounded-xl">
+              <p className="text-sm text-zinc-400 mb-3">
+                Vous investissez en Bitcoin ? Rejoignez Bitstack avec mon lien et recevez <span className="text-[#C9A84C] font-bold">5 € en Bitcoin</span> offerts.
+              </p>
+              <a href="https://bitstack-app.com/referral/CVXsenOtiMlY" target="_blank" rel="noopener noreferrer"
+                className="inline-block bg-[#C9A84C] text-black font-bold px-5 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
+                Rejoindre Bitstack →
+              </a>
+            </div>
           </section>
 
           <section>

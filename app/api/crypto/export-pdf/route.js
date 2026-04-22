@@ -11,7 +11,7 @@ export async function POST(request) {
   const transactions = await sqlCrypto`
     SELECT * FROM crypto_transactions
     WHERE user_id = ${session.userId}
-    AND EXTRACT(YEAR FROM date_transaction) = ${annee}
+    AND date_transaction <= ${annee + '-12-31T23:59:59Z'}
     ORDER BY date_transaction ASC
   `;
 

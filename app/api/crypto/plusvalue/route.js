@@ -31,11 +31,12 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { prixCessionUnitaire, quantiteCedee, crypto } = await request.json();
+  const { prixCessionUnitaire, quantiteCedee, crypto, annee } = await request.json();
 
   const transactions = await sqlCrypto`
     SELECT * FROM crypto_transactions
     WHERE user_id = ${session.userId}
+    AND EXTRACT(YEAR FROM date_transaction) <= ${annee || new Date().getFullYear()}
     ORDER BY date_transaction ASC
   `;
 

@@ -198,6 +198,7 @@ function SimulateurPlusValue({ transactions = [], prices = {} }) {
   const [crypto, setCrypto] = useState("");
   const [prixCession, setPrixCession] = useState("");
   const [quantiteCedee, setQuantiteCedee] = useState("");
+  const [annee, setAnnee] = useState(new Date().getFullYear());
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -217,6 +218,7 @@ function SimulateurPlusValue({ transactions = [], prices = {} }) {
         prixCessionUnitaire: parseFloat(prixCession),
         quantiteCedee: parseFloat(quantiteCedee),
         crypto,
+        annee,
       }),
     });
     const data = await res.json();
@@ -242,7 +244,16 @@ function SimulateurPlusValue({ transactions = [], prices = {} }) {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        <div>
+          <label className="text-xs text-zinc-400 mb-1 block">Année fiscale</label>
+          <select value={annee} onChange={e => setAnnee(Number(e.target.value))}
+            className={inputClass + " cursor-pointer"}>
+            {[2025, 2026, 2027].map(a => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="text-xs text-zinc-400 mb-1 block">Crypto à céder</label>
           <select value={crypto} onChange={e => {
@@ -359,7 +370,9 @@ function ImportCSV({ onImport }) {
 
       if (quantite <= 0 || montantEur <= 0) continue;
 
-      const prixReel = prixJeton > 0 ? prixJeton : montantEur / quantite;
+      const frais = parseFloat(getCol(row, "Frais") || 0);
+      const coutTotal = montantEur + frais;
+      const prixReel = coutTotal / quantite;
 
       transactions.push({
         type: "achat",

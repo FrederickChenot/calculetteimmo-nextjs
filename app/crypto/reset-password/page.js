@@ -16,15 +16,25 @@ function ResetForm() {
   const inputClass = "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none text-sm w-full";
 
   async function handleRequest() {
-    console.log("handleRequest appelé", email);
     setLoading(true);
     setError(null);
-    await fetch("/api/crypto/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setMessage("Si cet email existe, un lien de réinitialisation vous a été envoyé.");
+    console.log("Envoi requête reset password pour:", email);
+
+    try {
+      const res = await fetch("/api/crypto/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      console.log("Réponse status:", res.status);
+      const data = await res.json();
+      console.log("Réponse data:", data);
+      setMessage("Si cet email existe, un lien de réinitialisation vous a été envoyé.");
+    } catch (err) {
+      console.error("Erreur fetch:", err);
+      setError("Une erreur est survenue. Réessayez.");
+    }
+
     setLoading(false);
   }
 

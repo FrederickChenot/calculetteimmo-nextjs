@@ -84,6 +84,7 @@ export async function DELETE(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
   const { id } = await request.json();
+  await sqlCrypto`DELETE FROM crypto_plusvalues WHERE transaction_id = ${id} AND user_id = ${session.userId}`;
   await sqlCrypto`DELETE FROM crypto_transactions WHERE id = ${id} AND user_id = ${session.userId}`;
   return Response.json({ ok: true });
 }

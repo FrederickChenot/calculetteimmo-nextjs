@@ -556,8 +556,12 @@ function HistoriquePlusValues() {
     setExporting(false);
   }
 
-  const anneesDisponibles = [...new Set(plusvalues.map(p => p.annee))].sort((a, b) => b - a);
-  const annees = anneesDisponibles.length > 0 ? anneesDisponibles : [new Date().getFullYear()];
+  const anneeActuelle = new Date().getFullYear();
+  const annees = [...new Set([
+    ...plusvalues.map(p => p.annee),
+    anneeActuelle,
+    anneeActuelle - 1,
+  ])].sort((a, b) => b - a);
 
   if (loading || plusvalues.length === 0) return null;
 

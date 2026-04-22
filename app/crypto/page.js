@@ -715,7 +715,9 @@ function Dashboard({ session, onLogout }) {
         <div className="mt-4 bg-[#0d1f21] border border-[#C9A84C]/20 rounded-xl p-4 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-white">Pas encore sur Bitstack ?</p>
-            <p className="text-xs text-zinc-400 mt-1">Le moyen le plus simple d'épargner en Bitcoin. Recevez <span className="text-[#C9A84C] font-bold">5 € en Bitcoin</span> à l'inscription.</p>
+            <p className="text-xs text-zinc-400 mt-1">
+              Le moyen le plus simple d'épargner en Bitcoin. Recevez <span className="text-[#C9A84C] font-bold">5 € en Bitcoin</span> offerts — après un premier achat de 100 € minimum.
+            </p>
           </div>
           <a href="https://bitstack-app.com/referral/CVXsenOtiMlY" target="_blank" rel="noopener noreferrer"
             className="flex-shrink-0 bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-xs hover:bg-[#d4b86a] transition-colors whitespace-nowrap">

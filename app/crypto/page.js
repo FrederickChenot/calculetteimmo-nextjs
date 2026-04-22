@@ -632,6 +632,12 @@ function Dashboard({ session, onLogout }) {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState({});
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changePwdMsg, setChangePwdMsg] = useState(null);
+  const [changePwdError, setChangePwdError] = useState(null);
 
   useEffect(() => { fetchTransactions(); }, []);
 
@@ -648,6 +654,36 @@ function Dashboard({ session, onLogout }) {
     const data = await res.json();
     if (Array.isArray(data)) setTransactions(data);
     setLoading(false);
+  }
+
+  async function handleChangePassword() {
+    setChangePwdError(null);
+    if (newPassword !== confirmPassword) {
+      setChangePwdError("Les mots de passe ne correspondent pas");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setChangePwdError("Mot de passe trop court (8 caractères minimum)");
+      return;
+    }
+    const res = await fetch("/api/crypto/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ oldPassword, newPassword }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      setChangePwdError(data.error);
+    } else {
+      setChangePwdMsg("Mot de passe modifié avec succès !");
+      setTimeout(() => {
+        setShowChangePassword(false);
+        setChangePwdMsg(null);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }, 2000);
+    }
   }
 
   async function deleteTransaction(id) {
@@ -675,10 +711,16 @@ function Dashboard({ session, onLogout }) {
           </h1>
           <p className="text-sm text-zinc-400 mt-1">{session.user?.email}</p>
         </div>
-        <button onClick={onLogout}
-          className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
-          Se déconnecter
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setShowChangePassword(true)}
+            className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
+            Changer mot de passe
+          </button>
+          <button onClick={onLogout}
+            className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
+            Se déconnecter
+          </button>
+        </div>
       </div>
 
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
@@ -788,6 +830,37 @@ function Dashboard({ session, onLogout }) {
       </div>
 
       {showForm && <TransactionForm onAdd={t => setTransactions(prev => [...prev, t])} onClose={() => setShowForm(false)}/>}
+
+      {showChangePassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowChangePassword(false)}>
+          <div className="w-full max-w-sm bg-[#0d1f21] ring-1 ring-[#C9A84C]/20 rounded-2xl p-8"
+            onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-white mb-4">Changer mon mot de passe</h3>
+            <div className="flex flex-col gap-3">
+              <input type="password" placeholder="Mot de passe actuel" value={oldPassword}
+                onChange={e => setOldPassword(e.target.value)}
+                className="rounded-lg border border-[#2a4a4d] bg-[#12282A] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none text-sm"/>
+              <input type="password" placeholder="Nouveau mot de passe" value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="rounded-lg border border-[#2a4a4d] bg-[#12282A] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none text-sm"/>
+              <input type="password" placeholder="Confirmer le nouveau mot de passe" value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="rounded-lg border border-[#2a4a4d] bg-[#12282A] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none text-sm"/>
+              {changePwdError && <p className="text-red-400 text-sm">{changePwdError}</p>}
+              {changePwdMsg && <p className="text-emerald-400 text-sm">{changePwdMsg}</p>}
+              <button onClick={handleChangePassword}
+                className="bg-[#C9A84C] text-black font-bold py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
+                Modifier
+              </button>
+              <button onClick={() => setShowChangePassword(false)}
+                className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-8 pt-4 border-t border-[#2a4a4d] text-center">
         <a href="/crypto/mentions" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">

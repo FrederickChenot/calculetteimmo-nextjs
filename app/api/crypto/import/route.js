@@ -4,9 +4,12 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
+  console.log("Session userId:", session?.userId);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
   const { transactions } = await request.json();
+  console.log("Nombre reçu:", transactions.length);
+  console.log("Première transaction:", JSON.stringify(transactions[0]));
   let imported = 0;
 
   for (const tx of transactions) {

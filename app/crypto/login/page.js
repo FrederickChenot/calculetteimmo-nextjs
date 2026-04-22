@@ -105,6 +105,11 @@ export default function CryptoLogin() {
             </button>
           )}
         </div>
+        <p className="text-xs text-zinc-600 text-center mt-4 leading-relaxed">
+          En créant un compte, vous acceptez nos{" "}
+          <a href="/politique-confidentialite" className="text-zinc-500 underline hover:text-[#C9A84C]">CGU</a>
+          {" "}et reconnaissez que cet outil est fourni à titre indicatif uniquement.
+        </p>
       </div>
     </main>
   );

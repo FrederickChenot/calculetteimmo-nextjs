@@ -306,6 +306,9 @@ function SimulateurPlusValue({ transactions = [], prices = {}, onVente }) {
         className="w-full bg-[#C9A84C] text-black font-bold py-2 rounded-lg hover:bg-[#d4b86a] transition-colors text-sm mb-4">
         {loading ? "Calcul en cours..." : "Calculer la plus-value"}
       </button>
+      <p className="text-xs text-zinc-600 text-center mt-2">
+        Simulation indicative — méthode PMP Article 150 VH bis CGI — non substitutif à un conseil fiscal
+      </p>
 
       {result && !result.error && (
         <div className="bg-[#0d1f21] rounded-xl p-4 space-y-3">
@@ -545,16 +548,19 @@ function HistoriquePlusValues() {
       headStyles: { fillColor: [201, 168, 76], textColor: [0, 0, 0] },
     });
 
-    const finalY = doc.lastAutoTable.finalY + 15;
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setDrawColor(255, 165, 0);
+    doc.setLineWidth(0.5);
+    doc.rect(14, finalY, 182, 32);
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.setDrawColor(201, 168, 76);
-    doc.rect(14, finalY - 3, 182, 28);
-    doc.text("AVERTISSEMENT LEGAL", 16, finalY + 2);
-    doc.text("Ce document est genere automatiquement a titre indicatif uniquement.", 16, finalY + 7);
-    doc.text("Il ne constitue pas une declaration fiscale officielle.", 16, finalY + 12);
-    doc.text("Methode PMP - Article 150 VH bis du CGI - Flat tax 30% (12,8% IR + 17,2% PS)", 16, finalY + 17);
-    doc.text("Consultez un expert-comptable avant toute declaration. CalculetteImmo decline toute responsabilite.", 16, finalY + 22);
+    doc.setTextColor(180, 120, 0);
+    doc.text("AVERTISSEMENT LEGAL IMPORTANT", 16, finalY + 6);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Ce document est fourni a titre INDICATIF UNIQUEMENT et ne constitue pas une declaration", 16, finalY + 11);
+    doc.text("fiscale officielle. Les calculs peuvent comporter des erreurs ou omissions.", 16, finalY + 16);
+    doc.text("L'utilisateur est SEUL RESPONSABLE de sa declaration fiscale aupres de l'administration.", 16, finalY + 21);
+    doc.text("Consultez un expert-comptable agree avant toute declaration. CalculetteImmo decline", 16, finalY + 26);
+    doc.text("toute responsabilite quant a l'utilisation de ce document.", 16, finalY + 31);
 
     doc.save(`crypto-declaration-${data.annee}.pdf`);
     setExporting(false);
@@ -673,6 +679,14 @@ function Dashboard({ session, onLogout }) {
           className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
           Se déconnecter
         </button>
+      </div>
+
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
+        <p className="text-xs text-yellow-400 leading-relaxed">
+          ⚠️ <strong>Outil indicatif uniquement</strong> — Les calculs sont basés sur la méthode PMP (Article 150 VH bis du CGI) mais ne constituent pas une déclaration fiscale officielle.
+          Consultez un expert-comptable avant toute déclaration. CalculetteImmo décline toute responsabilité en cas d'erreur.{" "}
+          <a href="/crypto/mentions" className="underline hover:text-yellow-300 transition-colors">En savoir plus →</a>
+        </p>
       </div>
 
       {/* Stats */}

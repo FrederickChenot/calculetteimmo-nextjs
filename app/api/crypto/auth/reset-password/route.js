@@ -30,7 +30,7 @@ export async function POST(request) {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "noreply@calculetteimmo.com",
       to: email,
       subject: "Réinitialisation de votre mot de passe — CalculetteImmo",
       html: `

@@ -190,7 +190,7 @@ function Portefeuille({ transactions, prices }) {
 }
 
 // ── Simulateur plus-value ─────────────────────────────────
-function SimulateurPlusValue({ transactions = [], prices = {} }) {
+function SimulateurPlusValue({ transactions = [], prices = {}, onVente }) {
   const cryptosDisponibles = [...new Set(
     transactions.filter(t => t.type === "achat").map(t => t.crypto)
   )];
@@ -201,6 +201,7 @@ function SimulateurPlusValue({ transactions = [], prices = {} }) {
   const [annee, setAnnee] = useState(new Date().getFullYear());
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingVente, setLoadingVente] = useState(false);
 
   useEffect(() => {
     if (crypto && prices[crypto]) {
@@ -224,6 +225,29 @@ function SimulateurPlusValue({ transactions = [], prices = {} }) {
     const data = await res.json();
     setResult(data);
     setLoading(false);
+  }
+
+  async function enregistrerVente() {
+    setLoadingVente(true);
+    const res = await fetch("/api/crypto/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "vente",
+        crypto: crypto,
+        quantite: parseFloat(quantiteCedee),
+        prix_unitaire: parseFloat(prixCession),
+        date_transaction: new Date().toISOString(),
+        plateforme: "",
+        notes: `Vente simulée — Plus-value: ${result.plusValue} €`,
+      }),
+    });
+    const data = await res.json();
+    if (data.id) {
+      alert(`Vente enregistrée ! Plus-value: ${result.plusValue.toLocaleString("fr-FR")} € — Impôt estimé: ${result.impot.toLocaleString("fr-FR")} €`);
+      onVente();
+    }
+    setLoadingVente(false);
   }
 
   const inputClass = "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none text-sm w-full";
@@ -318,6 +342,10 @@ function SimulateurPlusValue({ transactions = [], prices = {} }) {
               À déclarer sur le formulaire 2086 — revenus de cessions d&apos;actifs numériques
             </p>
           )}
+          <button onClick={enregistrerVente} disabled={loadingVente}
+            className="w-full border border-emerald-500/40 text-emerald-400 font-bold py-2 rounded-lg text-sm hover:bg-emerald-500/10 transition-colors mt-2">
+            {loadingVente ? "Enregistrement..." : "✓ Enregistrer cette vente dans mes transactions"}
+          </button>
         </div>
       )}
     </div>
@@ -499,6 +527,24 @@ function HistoriquePlusValues() {
       headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
     });
 
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Cases formulaire 2086", 14, doc.lastAutoTable.finalY + 15);
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 19,
+      head: [["Case 2086", "Libellé", "Montant"]],
+      body: [
+        ["Case 3AN", "Total des prix de cession", `${data.totaux.totalCessions.toFixed(2)} €`],
+        ["Case 3BN", "Total des prix de revient", `${(data.totaux.totalCessions - data.totaux.totalPlusValue).toFixed(2)} €`],
+        ["Case 3BN résultat", "Plus-value nette imposable", `${data.totaux.totalPlusValue > 0 ? data.totaux.totalPlusValue.toFixed(2) : "0.00"} €`],
+        ["Case 3CA", "Impôt flat tax 12,8%", `${(data.totaux.totalPlusValue > 0 ? data.totaux.totalPlusValue * 0.128 : 0).toFixed(2)} €`],
+        ["Prélèvements sociaux 17,2%", "", `${(data.totaux.totalPlusValue > 0 ? data.totaux.totalPlusValue * 0.172 : 0).toFixed(2)} €`],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [201, 168, 76], textColor: [0, 0, 0] },
+    });
+
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
@@ -510,7 +556,8 @@ function HistoriquePlusValues() {
     setExporting(false);
   }
 
-  const annees = [...new Set(plusvalues.map(p => p.annee))].sort((a, b) => b - a);
+  const anneesDisponibles = [...new Set(plusvalues.map(p => p.annee))].sort((a, b) => b - a);
+  const annees = anneesDisponibles.length > 0 ? anneesDisponibles : [new Date().getFullYear()];
 
   if (loading || plusvalues.length === 0) return null;
 
@@ -525,9 +572,6 @@ function HistoriquePlusValues() {
           <select value={anneeExport} onChange={e => setAnneeExport(Number(e.target.value))}
             className="rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-3 py-1.5 text-zinc-100 text-sm focus:outline-none focus:border-[#C9A84C]">
             {annees.map(a => <option key={a} value={a}>{a}</option>)}
-            {!annees.includes(new Date().getFullYear()) && (
-              <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
-            )}
           </select>
           <button onClick={exportPDF} disabled={exporting}
             className="bg-[#C9A84C] text-black font-bold px-4 py-1.5 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors">
@@ -642,7 +686,7 @@ function Dashboard({ session, onLogout }) {
       <Portefeuille transactions={transactions} prices={prices} />
 
       {/* Simulateur */}
-      <SimulateurPlusValue transactions={transactions} prices={prices} />
+      <SimulateurPlusValue transactions={transactions} prices={prices} onVente={fetchTransactions} />
 
       {/* Historique plus-values */}
       <HistoriquePlusValues />

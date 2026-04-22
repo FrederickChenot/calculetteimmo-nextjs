@@ -548,9 +548,13 @@ function HistoriquePlusValues() {
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text("Calcul selon la methode PMP - Article 150 VH bis du CGI", 14, finalY);
-    doc.text("Flat tax 30% (12,8% IR + 17,2% prelevements sociaux)", 14, finalY + 5);
-    doc.text("Ce document est fourni a titre indicatif et ne constitue pas un conseil fiscal.", 14, finalY + 10);
+    doc.setDrawColor(201, 168, 76);
+    doc.rect(14, finalY - 3, 182, 28);
+    doc.text("AVERTISSEMENT LEGAL", 16, finalY + 2);
+    doc.text("Ce document est genere automatiquement a titre indicatif uniquement.", 16, finalY + 7);
+    doc.text("Il ne constitue pas une declaration fiscale officielle.", 16, finalY + 12);
+    doc.text("Methode PMP - Article 150 VH bis du CGI - Flat tax 30% (12,8% IR + 17,2% PS)", 16, finalY + 17);
+    doc.text("Consultez un expert-comptable avant toute declaration. CalculetteImmo decline toute responsabilite.", 16, finalY + 22);
 
     doc.save(`crypto-declaration-${data.annee}.pdf`);
     setExporting(false);
@@ -768,6 +772,12 @@ function Dashboard({ session, onLogout }) {
       </div>
 
       {showForm && <TransactionForm onAdd={t => setTransactions(prev => [...prev, t])} onClose={() => setShowForm(false)}/>}
+
+      <div className="mt-8 pt-4 border-t border-[#2a4a4d] text-center">
+        <a href="/crypto/mentions" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+          ⚠️ Mentions légales — Cet outil est fourni à titre indicatif uniquement. Non substitutif à un conseil fiscal professionnel.
+        </a>
+      </div>
     </div>
   );
 }

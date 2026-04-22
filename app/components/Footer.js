@@ -34,6 +34,15 @@ const MODALS = {
           Les présentes CGU sont soumises au droit français. Tout litige relève de la compétence
           exclusive des tribunaux français.
         </Section>
+        <Section title="6. Tracker de portefeuille crypto">
+          Le tracker crypto de CalculetteImmo est un outil de simulation fiscale fourni à titre purement informatif. Les calculs sont basés sur la méthode PMP (Prix Moyen Pondéré) conformément à l'Article 150 VH bis du Code Général des Impôts, mais ne constituent en aucun cas une déclaration fiscale officielle ni un conseil fiscal ou juridique. L'utilisateur est seul responsable de sa déclaration fiscale auprès de l'administration. CalculetteImmo décline toute responsabilité en cas d'erreur de calcul ou d'utilisation des résultats. Consultez un expert-comptable agréé pour votre situation personnelle.
+        </Section>
+        <Section title="7. Données financières et confidentialité">
+          Les transactions et données de portefeuille saisies dans le tracker sont stockées de manière sécurisée et ne sont accessibles qu'à l'utilisateur connecté. Elles ne sont jamais revendues ni partagées avec des tiers. Vous pouvez supprimer votre compte et toutes vos données à tout moment en nous contactant.
+        </Section>
+        <Section title="8. Liens partenaires">
+          Certains liens présents sur ce site sont des liens d'affiliation. Si vous créez un compte via ces liens, nous pouvons percevoir une commission. Cela ne change pas le prix pour vous.
+        </Section>
       </>
     ),
   },

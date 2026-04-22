@@ -1,7 +1,19 @@
 import { sqlCrypto } from "@/app/lib/cryptoDb";
 import bcrypt from "bcryptjs";
+import { rateLimit } from "@/app/lib/rateLimit";
 
 export async function POST(request) {
+  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const { allowed, remaining, resetAt } = rateLimit(ip, 3, 60 * 60 * 1000);
+
+  if (!allowed) {
+    const minutes = Math.ceil((resetAt - Date.now()) / 60000);
+    return Response.json(
+      { error: `Trop de tentatives. Réessayez dans ${minutes} minutes.` },
+      { status: 429 }
+    );
+  }
+
   const { email, password } = await request.json();
   if (!email || !password) return Response.json({ error: "Champs manquants" }, { status: 400 });
   if (password.length < 8) return Response.json({ error: "Mot de passe trop court (8 car. min)" }, { status: 400 });

@@ -16,6 +16,7 @@ function ResetForm() {
   const inputClass = "rounded-lg border border-[#2a4a4d] bg-[#0d1f21] px-4 py-2 text-zinc-100 placeholder-zinc-500 focus:border-[#C9A84C] focus:outline-none text-sm w-full";
 
   async function handleRequest() {
+    console.log("handleRequest appelé", email);
     setLoading(true);
     setError(null);
     await fetch("/api/crypto/auth/reset-password", {

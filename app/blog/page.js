@@ -53,6 +53,11 @@ const ARTICLES = [
   { slug: "rendement-locatif-net-net", titre: "Rendement locatif net net : ce que les agences ne calculent pas", description: "Rendement brut, net et net net : apprenez à calculer la vraie rentabilité de votre investissement locatif.", tag: "Investissement" },
   { slug: "bitcoin-investissement-long-terme", titre: "Investir dans Bitcoin sur 10 ans : stratégie et risques", description: "DCA, gestion du risque, conservation des clés : comment aborder Bitcoin sur le long terme de façon rationnelle.", tag: "Bitcoin" },
   { slug: "apport-personnel-achat-immobilier", titre: "Apport personnel : quel montant minimum en 2026 ?", description: "Combien faut-il d'apport pour acheter en 2026 ? Règles des banques, minimum exigé et comment emprunter sans apport.", tag: "Financement" },
+  { slug: "taux-immobilier-2026", titre: "Taux immobilier 2026 — Où en est-on et que prévoir ?", description: "Analyse des taux immobiliers en 2026, évolution depuis 2024, prévisions et conseils pour emprunter au meilleur taux.", tag: "Immobilier" },
+  { slug: "dca-bitcoin-investir-chaque-mois", titre: "DCA Bitcoin — Comment investir 50€/mois et construire un patrimoine", description: "Le DCA (Dollar Cost Averaging) appliqué au Bitcoin : stratégie, avantages, calculs et plateformes recommandées pour investir régulièrement.", tag: "Bitcoin" },
+  { slug: "sci-vs-lmnp-quelle-structure", titre: "SCI ou LMNP — Quelle structure choisir pour investir dans l'immobilier locatif ?", description: "Comparatif SCI vs LMNP : fiscalité, avantages, inconvénients et cas pratiques pour choisir la meilleure structure d'investissement locatif.", tag: "Immobilier" },
+  { slug: "bitcoin-vs-immobilier-2026", titre: "Bitcoin vs Immobilier — Quel investissement choisir en 2026 ?", description: "Comparatif Bitcoin vs immobilier en 2026 : rendements, risques, fiscalité, liquidité. Faut-il choisir ou combiner les deux ?", tag: "Investissement" },
+  { slug: "declarer-crypto-impots-2026", titre: "Déclarer ses crypto aux impôts en 2026 — Guide complet formulaire 2086", description: "Comment déclarer ses cryptomonnaies aux impôts en 2026 ? Guide complet sur le formulaire 2086, la méthode PMP et la flat tax 30%.", tag: "Fiscalité crypto" },
 ];
 
 export default function BlogIndex() {

@@ -15,6 +15,11 @@ export default function sitemap() {
     { url: `${base}/blog/rendement-locatif-net-net`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/bitcoin-investissement-long-terme`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/apport-personnel-achat-immobilier`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/taux-immobilier-2026`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/dca-bitcoin-investir-chaque-mois`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/sci-vs-lmnp-quelle-structure`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/bitcoin-vs-immobilier-2026`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/blog/declarer-crypto-impots-2026`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/politique-confidentialite`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

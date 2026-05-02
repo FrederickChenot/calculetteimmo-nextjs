@@ -23,7 +23,8 @@
       "Read(//c/d/Users/Fred/Downloads/**)",
       "Bash(openssl rand *)",
       "Bash(rm \"C:/Users/Fred/Desktop/bureau2/Projet-Dev/calculetteimmo/app/api/crypto/auth/[...nextauth]/route.js\")",
-      "Bash(rmdir \"C:/Users/Fred/Desktop/bureau2/Projet-Dev/calculetteimmo/app/api/crypto/auth/[...nextauth]\")"
+      "Bash(rmdir \"C:/Users/Fred/Desktop/bureau2/Projet-Dev/calculetteimmo/app/api/crypto/auth/[...nextauth]\")",
+      "Bash(npm list *)"
     ]
   }
 }

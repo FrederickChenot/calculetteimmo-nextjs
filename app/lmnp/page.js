@@ -3,12 +3,12 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
 
 const CAT_COLORS = {
-  travaux:    { badge: "bg-green-500/20 text-green-400",  bar: "bg-green-500"  },
-  mobilier:   { badge: "bg-blue-500/20 text-blue-400",    bar: "bg-blue-500"   },
-  equipement: { badge: "bg-teal-500/20 text-teal-400",    bar: "bg-teal-500"   },
-  charges:    { badge: "bg-amber-500/20 text-amber-400",  bar: "bg-amber-500"  },
+  travaux:    { badge: "bg-green-500/20 text-green-400",   bar: "bg-green-500"  },
+  mobilier:   { badge: "bg-blue-500/20 text-blue-400",     bar: "bg-blue-500"   },
+  equipement: { badge: "bg-teal-500/20 text-teal-400",     bar: "bg-teal-500"   },
+  charges:    { badge: "bg-amber-500/20 text-amber-400",   bar: "bg-amber-500"  },
   honoraires: { badge: "bg-violet-500/20 text-violet-400", bar: "bg-violet-500" },
-  divers:     { badge: "bg-zinc-500/20 text-zinc-400",    bar: "bg-zinc-500"   },
+  divers:     { badge: "bg-zinc-500/20 text-zinc-400",     bar: "bg-zinc-500"   },
 };
 
 const inputClass =
@@ -20,9 +20,7 @@ function fmt(n) {
 
 function CategoryBadge({ cat }) {
   const c = CAT_COLORS[cat] || CAT_COLORS.divers;
-  return (
-    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${c.badge}`}>{cat}</span>
-  );
+  return <span className={`text-xs font-semibold px-2 py-1 rounded-full ${c.badge}`}>{cat}</span>;
 }
 
 function TraitementBadge({ traitement }) {
@@ -35,12 +33,22 @@ function TraitementBadge({ traitement }) {
   );
 }
 
-function AnalyseCard({ analyse }) {
+function Spinner() {
+  return (
+    <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    </svg>
+  );
+}
+
+function AnalyseCard({ analyse, filename }) {
   return (
     <div className="bg-[#0d1f21] rounded-xl p-4 space-y-3">
+      {filename && <p className="text-xs text-zinc-500 truncate">{filename}</p>}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-white font-bold text-lg">{analyse.fournisseur}</p>
+          <p className="text-white font-bold text-base">{analyse.fournisseur}</p>
           <p className="text-zinc-400 text-sm">{analyse.date_facture}</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end flex-shrink-0">
@@ -48,28 +56,54 @@ function AnalyseCard({ analyse }) {
           <TraitementBadge traitement={analyse.traitement} />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {[
           ["Montant HT", fmt(analyse.montant_ht) + " €", "text-white"],
           ["TVA", fmt(analyse.tva) + " €", "text-white"],
           ["Montant TTC", fmt(analyse.montant_ttc) + " €", "text-[#C9A84C]"],
         ].map(([label, val, cls]) => (
-          <div key={label} className="bg-[#12282A] rounded-lg p-3">
-            <p className="text-xs text-zinc-500 mb-1">{label}</p>
-            <p className={`font-semibold ${cls}`}>{val}</p>
+          <div key={label} className="bg-[#12282A] rounded-lg p-2.5">
+            <p className="text-xs text-zinc-500 mb-0.5">{label}</p>
+            <p className={`text-sm font-semibold ${cls}`}>{val}</p>
           </div>
         ))}
       </div>
       {analyse.duree_amort && (
         <p className="text-xs text-zinc-400">
-          Durée d&apos;amortissement :{" "}
+          Amortissement sur{" "}
           <span className="text-white font-medium">{analyse.duree_amort} ans</span>
+          {" "}→{" "}
+          <span className="text-orange-400 font-medium">
+            {fmt(Number(analyse.montant_ht || 0) / analyse.duree_amort)} €/an
+          </span>
         </p>
       )}
       {analyse.description && <p className="text-sm text-zinc-300">{analyse.description}</p>}
       {analyse.note && <p className="text-xs text-zinc-500 italic">{analyse.note}</p>}
     </div>
   );
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadToBlob(file) {
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/lmnp/upload", { method: "POST", body: fd });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.url || null;
+  } catch {
+    return null;
+  }
 }
 
 export default function LmnpPage() {
@@ -80,14 +114,17 @@ export default function LmnpPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [facturesLoading, setFacturesLoading] = useState(false);
 
-  const [pdfFile, setPdfFile] = useState(null);
-  const [analyse, setAnalyse] = useState(null);
+  // Upload / analyse state
+  const [pdfFiles, setPdfFiles] = useState([]);
+  const [analyseResults, setAnalyseResults] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeProgress, setAnalyzeProgress] = useState(null);
   const [saveConfirm, setSaveConfirm] = useState(null);
-  const [analyzeError, setAnalyzeError] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const addMoreRef = useRef(null);
 
+  // Simulation state
   const [showSimulation, setShowSimulation] = useState(false);
   const [loyerAnnuel, setLoyerAnnuel] = useState("");
 
@@ -107,50 +144,76 @@ export default function LmnpPage() {
     setFacturesLoading(false);
   }
 
+  function addFiles(fileList) {
+    const valid = Array.from(fileList).filter(f => f.type === "application/pdf");
+    if (valid.length) setPdfFiles(prev => [...prev, ...valid]);
+  }
+
   function handleDrop(e) {
     e.preventDefault();
     setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file?.type === "application/pdf") { setPdfFile(file); setAnalyse(null); }
+    addFiles(e.dataTransfer.files);
+    setAnalyseResults([]);
   }
 
-  async function handleAnalyze() {
-    if (!pdfFile) return;
+  function removeFile(idx) {
+    setPdfFiles(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleAnalyzeAll() {
+    if (!pdfFiles.length || analyzing) return;
     setAnalyzing(true);
-    setAnalyse(null);
-    setAnalyzeError(null);
+    setAnalyseResults([]);
     setSaveConfirm(null);
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
+    let savedCount = 0;
+
+    for (let i = 0; i < pdfFiles.length; i++) {
+      const file = pdfFiles[i];
+      setAnalyzeProgress({ current: i + 1, total: pdfFiles.length, filename: file.name });
+
       try {
-        const base64 = e.target.result.split(",")[1];
+        const [base64, url_pdf] = await Promise.all([
+          readFileAsBase64(file),
+          session ? uploadToBlob(file) : Promise.resolve(null),
+        ]);
+
         const res = await fetch("/api/lmnp/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             pdf_base64: base64,
-            filename: pdfFile.name,
+            filename: file.name,
             annee,
             save: !!session,
+            url_pdf,
           }),
         });
         const data = await res.json();
-        if (data.error) {
-          setAnalyzeError(data.error);
-        } else {
-          setAnalyse(data.analyse);
-          if (data.saved) {
-            setSaveConfirm(`Facture sauvegardée dans votre historique ${annee}`);
-            fetchFactures();
-          }
-        }
+        setAnalyseResults(prev => [...prev, {
+          file,
+          analyse: data.analyse || null,
+          saved: data.saved || false,
+          error: data.error || null,
+        }]);
+        if (data.saved) { savedCount++; fetchFactures(); }
       } catch {
-        setAnalyzeError("Erreur lors de l'analyse. Veuillez réessayer.");
+        setAnalyseResults(prev => [...prev, {
+          file,
+          analyse: null,
+          saved: false,
+          error: "Erreur lors de l'analyse",
+        }]);
       }
-      setAnalyzing(false);
-    };
-    reader.readAsDataURL(pdfFile);
+    }
+
+    setAnalyzing(false);
+    setAnalyzeProgress(null);
+    if (savedCount > 0) {
+      setSaveConfirm(
+        `${savedCount} facture${savedCount > 1 ? "s" : ""} sauvegardée${savedCount > 1 ? "s" : ""} dans votre historique ${annee}`
+      );
+    }
   }
 
   async function deleteFacture(id) {
@@ -175,26 +238,48 @@ export default function LmnpPage() {
     URL.revokeObjectURL(url);
   }
 
+  // Ventilation groupée par (categorie + traitement)
   const ventilation = factures.reduce((acc, f) => {
     const cat = f.categorie || "divers";
-    if (!acc[cat]) acc[cat] = { count: 0, totalHt: 0, totalTtc: 0, traitement: f.traitement };
-    acc[cat].count++;
-    acc[cat].totalHt += Number(f.montant_ht || 0);
-    acc[cat].totalTtc += Number(f.montant_ttc || 0);
+    const trait = f.traitement || "deductible";
+    const key = `${cat}__${trait}`;
+    if (!acc[key]) acc[key] = { cat, traitement: trait, count: 0, totalHt: 0, totalTtc: 0, amortAnnuel: 0 };
+    acc[key].count++;
+    acc[key].totalHt += Number(f.montant_ht || 0);
+    acc[key].totalTtc += Number(f.montant_ttc || 0);
+    if (trait === "amortissable" && f.duree_amort) {
+      acc[key].amortAnnuel += Number(f.montant_ht || 0) / Number(f.duree_amort);
+    }
+    return acc;
+  }, {});
+
+  // Ventilation agrégée par catégorie pour les barres du dashboard
+  const ventilationByCat = Object.values(ventilation).reduce((acc, v) => {
+    if (!acc[v.cat]) acc[v.cat] = { totalTtc: 0 };
+    acc[v.cat].totalTtc += v.totalTtc;
     return acc;
   }, {});
 
   const totalHtAll = factures.reduce((s, f) => s + Number(f.montant_ht || 0), 0);
   const totalTtcAll = factures.reduce((s, f) => s + Number(f.montant_ttc || 0), 0);
-  const amortissableHt = factures.filter(f => f.traitement === "amortissable").reduce((s, f) => s + Number(f.montant_ht || 0), 0);
   const deductibleHt = factures.filter(f => f.traitement === "deductible").reduce((s, f) => s + Number(f.montant_ht || 0), 0);
   const totalTva = factures.reduce((s, f) => s + Number(f.tva || 0), 0);
-  const amortAnnuel = factures
+
+  // Amortissements annuels : somme des annuités (montant_ht / duree_amort)
+  const amortDetails = factures
     .filter(f => f.traitement === "amortissable" && f.duree_amort)
-    .reduce((s, f) => s + Number(f.montant_ht || 0) / Number(f.duree_amort), 0);
+    .map(f => ({
+      label: f.fournisseur || f.description || f.filename,
+      annuite: Number(f.montant_ht || 0) / Number(f.duree_amort),
+    }));
+  const amortAnnuel = amortDetails.reduce((s, d) => s + d.annuite, 0);
 
   const loyer = parseFloat(loyerAnnuel) || 0;
   const resultatFiscal = loyer - deductibleHt - amortAnnuel;
+
+  const analyzeButtonLabel = pdfFiles.length > 1
+    ? `Analyser tout (${pdfFiles.length})`
+    : "Analyser";
 
   return (
     <main className="min-h-screen bg-[#0a1628]">
@@ -215,8 +300,9 @@ export default function LmnpPage() {
 
         {/* Upload & Analyse */}
         <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5">
-          <h2 className="text-lg font-bold text-white">Analyser une facture</h2>
+          <h2 className="text-lg font-bold text-white">Analyser des factures</h2>
 
+          {/* Drop zone */}
           <div
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
               dragOver ? "border-[#C9A84C] bg-[#C9A84C]/5" : "border-[#2a4a4d] hover:border-[#C9A84C]/50"
@@ -230,42 +316,99 @@ export default function LmnpPage() {
               ref={fileInputRef}
               type="file"
               accept=".pdf"
+              multiple
               className="hidden"
-              onChange={e => {
-                if (e.target.files[0]) { setPdfFile(e.target.files[0]); setAnalyse(null); }
-              }}
+              onChange={e => { addFiles(e.target.files); setAnalyseResults([]); e.target.value = ""; }}
             />
-            {pdfFile ? (
-              <p className="text-[#C9A84C] font-medium">{pdfFile.name}</p>
-            ) : (
-              <>
-                <p className="text-zinc-300 font-medium">Glissez votre facture PDF ici</p>
-                <p className="text-zinc-500 text-sm mt-1">ou cliquez pour sélectionner</p>
-              </>
-            )}
+            <input
+              ref={addMoreRef}
+              type="file"
+              accept=".pdf"
+              multiple
+              className="hidden"
+              onChange={e => { addFiles(e.target.files); e.target.value = ""; }}
+            />
+            <p className="text-zinc-300 font-medium">Glissez vos factures PDF ici</p>
+            <p className="text-zinc-500 text-sm mt-1">ou cliquez pour sélectionner · plusieurs fichiers acceptés</p>
           </div>
 
-          <button
-            onClick={handleAnalyze}
-            disabled={!pdfFile || analyzing}
-            className="w-full bg-[#C9A84C] text-black font-bold py-3 rounded-xl hover:bg-[#d4b86a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {analyzing ? (
-              <>
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Analyse en cours par l&apos;IA...
-              </>
-            ) : "Analyser"}
-          </button>
+          {/* File list */}
+          {pdfFiles.length > 0 && (
+            <div className="space-y-2">
+              {pdfFiles.map((f, i) => (
+                <div key={i} className="flex items-center justify-between bg-[#0d1f21] rounded-lg px-3 py-2">
+                  <span className="text-zinc-300 text-sm truncate flex-1">{f.name}</span>
+                  <button
+                    onClick={() => removeFile(i)}
+                    className="text-zinc-600 hover:text-red-400 transition-colors text-xs ml-3 flex-shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => addMoreRef.current?.click()}
+                className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors"
+              >
+                + Ajouter d&apos;autres fichiers
+              </button>
+            </div>
+          )}
 
-          {analyzeError && <p className="text-red-400 text-sm">{analyzeError}</p>}
+          {/* Progress bar */}
+          {analyzing && analyzeProgress && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-300 truncate">
+                  Analyse {analyzeProgress.current}/{analyzeProgress.total} — {analyzeProgress.filename}
+                </span>
+                <span className="text-zinc-500 flex-shrink-0 ml-2">
+                  {Math.round(((analyzeProgress.current - 1) / analyzeProgress.total) * 100)}%
+                </span>
+              </div>
+              <div className="h-2 bg-[#0d1f21] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#C9A84C] rounded-full transition-all"
+                  style={{ width: `${((analyzeProgress.current - 1) / analyzeProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
 
-          {analyse && <AnalyseCard analyse={analyse} />}
+          {/* Boutons */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleAnalyzeAll}
+              disabled={!pdfFiles.length || analyzing}
+              className="flex-1 bg-[#C9A84C] text-black font-bold py-3 rounded-xl hover:bg-[#d4b86a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {analyzing ? <><Spinner />Analyse en cours par l&apos;IA...</> : analyzeButtonLabel}
+            </button>
+          </div>
 
-          {analyse && !session && (
+          {/* Results */}
+          {analyseResults.length > 0 && (
+            <div className="space-y-3">
+              {analyseResults.map((r, i) => (
+                <div key={i}>
+                  {r.error && (
+                    <p className="text-red-400 text-sm px-1">
+                      {r.file.name} : {r.error}
+                    </p>
+                  )}
+                  {r.analyse && (
+                    <AnalyseCard
+                      analyse={r.analyse}
+                      filename={analyseResults.length > 1 ? r.file.name : null}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* CTA non connecté */}
+          {analyseResults.some(r => r.analyse) && !session && (
             <div className="bg-[#0d1f21] rounded-xl p-4 flex items-center justify-between gap-4">
               <p className="text-zinc-300 text-sm">
                 Connectez-vous pour sauvegarder et accéder à l&apos;historique
@@ -284,7 +427,7 @@ export default function LmnpPage() {
           )}
         </div>
 
-        {/* Tabs — only if authenticated */}
+        {/* Tabs — uniquement si connecté */}
         {session && (
           <div className="space-y-6">
             <div className="flex gap-2 flex-wrap">
@@ -307,7 +450,7 @@ export default function LmnpPage() {
               ))}
             </div>
 
-            {/* ── Onglet Mes factures ── */}
+            {/* ── Mes factures ── */}
             {activeTab === "factures" && (
               <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5">
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -354,6 +497,16 @@ export default function LmnpPage() {
                           <span className="text-white font-semibold text-sm">{fmt(f.montant_ttc)} €</span>
                           <CategoryBadge cat={f.categorie} />
                           <TraitementBadge traitement={f.traitement} />
+                          {f.url_pdf && (
+                            <a
+                              href={f.url_pdf}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#C9A84C] hover:underline ml-1"
+                            >
+                              Voir PDF
+                            </a>
+                          )}
                           <button
                             onClick={() => deleteFacture(f.id)}
                             className="text-zinc-600 hover:text-red-400 transition-colors text-xs ml-1"
@@ -368,11 +521,13 @@ export default function LmnpPage() {
               </div>
             )}
 
-            {/* ── Onglet Ventilation ── */}
+            {/* ── Ventilation ── */}
             {activeTab === "ventilation" && (
               <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5">
                 <div className="flex items-center justify-between flex-wrap gap-3">
-                  <h2 className="text-lg font-bold text-white">Ventilation par catégorie — {annee}</h2>
+                  <h2 className="text-lg font-bold text-white">
+                    Ventilation fiscale — {annee}
+                  </h2>
                   {isOwner && (
                     <button
                       onClick={exportCSV}
@@ -392,27 +547,30 @@ export default function LmnpPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-[#2a4a4d]">
-                          {["Catégorie", "Nb factures", "Traitement", "Total HT", "Total TTC"].map(h => (
+                          {["Catégorie", "Traitement", "Nb", "Total HT", "Total TTC", "Annuité/an"].map(h => (
                             <th key={h} className="text-left px-3 py-2 text-xs text-zinc-400 font-medium">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(ventilation).map(([cat, v]) => (
-                          <tr key={cat} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21] transition-colors">
-                            <td className="px-3 py-3"><CategoryBadge cat={cat} /></td>
-                            <td className="px-3 py-3 text-zinc-300">{v.count}</td>
+                        {Object.entries(ventilation).map(([key, v]) => (
+                          <tr key={key} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21] transition-colors">
+                            <td className="px-3 py-3"><CategoryBadge cat={v.cat} /></td>
                             <td className="px-3 py-3"><TraitementBadge traitement={v.traitement} /></td>
+                            <td className="px-3 py-3 text-zinc-300">{v.count}</td>
                             <td className="px-3 py-3 text-zinc-300">{fmt(v.totalHt)} €</td>
                             <td className="px-3 py-3 text-white font-medium">{fmt(v.totalTtc)} €</td>
+                            <td className="px-3 py-3 text-orange-400">
+                              {v.amortAnnuel > 0 ? `${fmt(v.amortAnnuel)} €` : "—"}
+                            </td>
                           </tr>
                         ))}
                         <tr className="border-t-2 border-[#C9A84C]/30 bg-[#0d1f21]">
-                          <td className="px-3 py-3 font-bold text-white">Total</td>
+                          <td className="px-3 py-3 font-bold text-white" colSpan={2}>Total</td>
                           <td className="px-3 py-3 font-bold text-white">{factures.length}</td>
-                          <td className="px-3 py-3"/>
                           <td className="px-3 py-3 font-bold text-white">{fmt(totalHtAll)} €</td>
                           <td className="px-3 py-3 font-bold text-[#C9A84C]">{fmt(totalTtcAll)} €</td>
+                          <td className="px-3 py-3 font-bold text-orange-400">{fmt(amortAnnuel)} €/an</td>
                         </tr>
                       </tbody>
                     </table>
@@ -421,13 +579,13 @@ export default function LmnpPage() {
               </div>
             )}
 
-            {/* ── Onglet Tableau de bord ── */}
+            {/* ── Tableau de bord ── */}
             {activeTab === "dashboard" && (
               <div className="space-y-5">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     ["Total factures TTC", `${fmt(totalTtcAll)} €`, "text-white"],
-                    ["Amortissable HT", `${fmt(amortissableHt)} €`, "text-orange-400"],
+                    ["Amortissements annuels", `${fmt(amortAnnuel)} €/an`, "text-orange-400"],
                     ["Charges déductibles HT", `${fmt(deductibleHt)} €`, "text-emerald-400"],
                     ["TVA totale", `${fmt(totalTva)} €`, "text-[#C9A84C]"],
                   ].map(([label, val, cls]) => (
@@ -444,7 +602,7 @@ export default function LmnpPage() {
                     <p className="text-zinc-400 text-sm">Aucune facture pour {annee}</p>
                   ) : (
                     <div className="space-y-4">
-                      {Object.entries(ventilation).map(([cat, v]) => {
+                      {Object.entries(ventilationByCat).map(([cat, v]) => {
                         const colors = CAT_COLORS[cat] || CAT_COLORS.divers;
                         const pct = totalTtcAll > 0 ? (v.totalTtc / totalTtcAll) * 100 : 0;
                         return (
@@ -497,7 +655,7 @@ export default function LmnpPage() {
           onClick={() => setShowSimulation(false)}
         >
           <div
-            className="w-full max-w-lg bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5"
+            className="w-full max-w-lg bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-white">
@@ -516,29 +674,47 @@ export default function LmnpPage() {
             </div>
 
             <div className="bg-[#0d1f21] rounded-xl p-4 space-y-3">
-              {[
-                ["Loyer annuel", loyer, false, "text-white"],
-                ["Charges déductibles HT", deductibleHt, true, "text-emerald-400"],
-                ["Amortissements annuels estimés", amortAnnuel, true, "text-orange-400"],
-              ].map(([label, val, minus, cls]) => (
-                <div key={label} className="flex justify-between text-sm">
-                  <span className="text-zinc-400">{label}</span>
-                  <span className={`font-semibold ${cls}`}>
-                    {minus ? "−" : ""}{fmt(val)} €
-                  </span>
+              {/* Loyer */}
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Loyer annuel</span>
+                <span className="font-semibold text-white">{fmt(loyer)} €</span>
+              </div>
+
+              {/* Charges déductibles */}
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Charges déductibles HT ({annee})</span>
+                <span className="font-semibold text-emerald-400">−{fmt(deductibleHt)} €</span>
+              </div>
+
+              {/* Amortissements */}
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Amortissements annuels estimés</span>
+                <span className="font-semibold text-orange-400">−{fmt(amortAnnuel)} €</span>
+              </div>
+              {amortDetails.length > 0 && (
+                <div className="ml-4 space-y-1 pt-1">
+                  {amortDetails.map((d, i) => (
+                    <div key={i} className="flex justify-between text-xs text-zinc-500">
+                      <span className="truncate mr-2">{d.label}</span>
+                      <span className="flex-shrink-0">{fmt(d.annuite)} €/an</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
               <div className="h-px bg-[#2a4a4d]" />
+
+              {/* Résultat */}
               <div className="flex justify-between items-center">
                 <span className="text-white font-semibold">Résultat fiscal estimé</span>
                 <span className={`text-xl font-bold ${resultatFiscal >= 0 ? "text-[#C9A84C]" : "text-emerald-400"}`}>
                   {resultatFiscal < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscal))} €
                 </span>
               </div>
-              <p className={`text-xs ${resultatFiscal >= 0 ? "text-amber-400" : "text-emerald-400"}`}>
+              <p className={`text-xs font-medium ${resultatFiscal >= 0 ? "text-amber-400" : "text-emerald-400"}`}>
                 {resultatFiscal >= 0
-                  ? "Bénéfice imposable estimé"
-                  : "Déficit foncier — aucune imposition sur ces revenus"}
+                  ? "Bénéfice imposable — à déclarer sur formulaire 2031"
+                  : "Déficit — report possible sur les années suivantes (BIC)"}
               </p>
             </div>
 

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(request) {
-  const { pdf_base64, filename, annee, save } = await request.json();
+  const { pdf_base64, filename, annee, save, url_pdf } = await request.json();
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -56,8 +56,8 @@ Règles BOFIP : travaux structurels amortissable 25-40 ans, mobilier/équipement
 
   if (save && session?.userId) {
     const [facture] = await sqlLmnp`
-      INSERT INTO lmnp_factures (user_id, filename, annee)
-      VALUES (${session.userId}, ${filename}, ${annee})
+      INSERT INTO lmnp_factures (user_id, filename, annee, url_pdf)
+      VALUES (${session.userId}, ${filename}, ${annee}, ${url_pdf || null})
       RETURNING id
     `;
     facture_id = facture.id;

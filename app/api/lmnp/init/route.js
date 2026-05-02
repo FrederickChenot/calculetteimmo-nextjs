@@ -7,8 +7,12 @@ export async function GET() {
       user_id INTEGER NOT NULL,
       filename TEXT NOT NULL,
       annee INTEGER NOT NULL,
+      url_pdf TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `;
+  await sqlLmnp`
+    ALTER TABLE lmnp_factures ADD COLUMN IF NOT EXISTS url_pdf TEXT
   `;
   await sqlLmnp`
     CREATE TABLE IF NOT EXISTS lmnp_analyses (

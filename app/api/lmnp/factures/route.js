@@ -11,7 +11,7 @@ export async function GET(request) {
 
   const rows = annee
     ? await sqlLmnp`
-        SELECT f.id, f.filename, f.annee, f.created_at,
+        SELECT f.id, f.filename, f.annee, f.created_at, f.url_pdf,
                a.id as analyse_id, a.fournisseur, a.date_facture,
                a.montant_ht, a.tva, a.montant_ttc,
                a.categorie, a.traitement, a.duree_amort, a.description, a.note
@@ -21,7 +21,7 @@ export async function GET(request) {
         ORDER BY f.created_at DESC
       `
     : await sqlLmnp`
-        SELECT f.id, f.filename, f.annee, f.created_at,
+        SELECT f.id, f.filename, f.annee, f.created_at, f.url_pdf,
                a.id as analyse_id, a.fournisseur, a.date_facture,
                a.montant_ht, a.tva, a.montant_ttc,
                a.categorie, a.traitement, a.duree_amort, a.description, a.note

@@ -29,14 +29,51 @@ export async function GET(request) {
       : s;
   }
 
-  const header = "Fichier;Fournisseur;Date;Montant HT;TVA;Montant TTC;Catégorie;Traitement;Durée amort.;Description;Note";
-  const lines = rows.map(r =>
-    [r.filename, r.fournisseur, r.date_facture, r.montant_ht, r.tva,
-     r.montant_ttc, r.categorie, r.traitement, r.duree_amort, r.description, r.note]
-      .map(csvCell).join(";")
-  );
+  function annuite(r) {
+    if (r.traitement === "amortissable" && r.duree_amort) {
+      return Number(r.montant_ht || 0) / Number(r.duree_amort);
+    }
+    return null;
+  }
 
-  const csv = [header, ...lines].join("\r\n");
+  function deductible(r) {
+    if (r.traitement === "deductible") return Number(r.montant_ht || 0);
+    if (r.traitement === "amortissable" && r.duree_amort) {
+      return Number(r.montant_ht || 0) / Number(r.duree_amort);
+    }
+    return 0;
+  }
+
+  const header =
+    `Fichier;Fournisseur;Date;Montant HT;TVA;Montant TTC;Catégorie;Traitement;Durée amort.;Description;Note;Annuité amortissement;Déductible ${annee}`;
+
+  const lines = rows.map(r => {
+    const ann = annuite(r);
+    const ded = deductible(r);
+    return [
+      r.filename, r.fournisseur, r.date_facture,
+      r.montant_ht, r.tva, r.montant_ttc,
+      r.categorie, r.traitement, r.duree_amort,
+      r.description, r.note,
+      ann !== null ? ann.toFixed(2) : "",
+      ded > 0 ? ded.toFixed(2) : "",
+    ].map(csvCell).join(";");
+  });
+
+  const totalHt = rows.reduce((s, r) => s + Number(r.montant_ht || 0), 0);
+  const totalTva = rows.reduce((s, r) => s + Number(r.tva || 0), 0);
+  const totalTtc = rows.reduce((s, r) => s + Number(r.montant_ttc || 0), 0);
+  const totalAnnuite = rows.reduce((s, r) => s + (annuite(r) || 0), 0);
+  const totalDeductible = rows.reduce((s, r) => s + deductible(r), 0);
+
+  const totalRow = [
+    "TOTAL", "", "",
+    totalHt.toFixed(2), totalTva.toFixed(2), totalTtc.toFixed(2),
+    "", "", "", "", "",
+    totalAnnuite.toFixed(2), totalDeductible.toFixed(2),
+  ].map(csvCell).join(";");
+
+  const csv = [header, ...lines, totalRow].join("\r\n");
 
   return new Response(csv, {
     headers: {

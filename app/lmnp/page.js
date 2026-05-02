@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const CAT_COLORS = {
   travaux:    { badge: "bg-green-500/20 text-green-400",   bar: "bg-green-500"  },
@@ -107,7 +108,8 @@ async function uploadToBlob(file) {
 }
 
 export default function LmnpPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("factures");
   const [annee, setAnnee] = useState(new Date().getFullYear());
   const [factures, setFactures] = useState([]);
@@ -127,6 +129,10 @@ export default function LmnpPage() {
   // Simulation state
   const [showSimulation, setShowSimulation] = useState(false);
   const [loyerAnnuel, setLoyerAnnuel] = useState("");
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/crypto/login");
+  }, [status, router]);
 
   useEffect(() => { fetch("/api/lmnp/init"); }, []);
 
@@ -277,6 +283,9 @@ export default function LmnpPage() {
   const loyer = parseFloat(loyerAnnuel) || 0;
   const resultatFiscal = loyer - deductibleHt - amortAnnuel;
 
+  if (status === "loading") return null;
+  if (!session) return null;
+
   const analyzeButtonLabel = pdfFiles.length > 1
     ? `Analyser tout (${pdfFiles.length})`
     : "Analyser";
@@ -407,29 +416,13 @@ export default function LmnpPage() {
             </div>
           )}
 
-          {/* CTA non connecté */}
-          {analyseResults.some(r => r.analyse) && !session && (
-            <div className="bg-[#0d1f21] rounded-xl p-4 flex items-center justify-between gap-4">
-              <p className="text-zinc-300 text-sm">
-                Connectez-vous pour sauvegarder et accéder à l&apos;historique
-              </p>
-              <button
-                onClick={() => signIn(undefined, { callbackUrl: "/lmnp" })}
-                className="flex-shrink-0 bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
-              >
-                Se connecter
-              </button>
-            </div>
-          )}
-
           {saveConfirm && (
             <p className="text-emerald-400 text-sm text-center">{saveConfirm}</p>
           )}
         </div>
 
-        {/* Tabs — uniquement si connecté */}
-        {session && (
-          <div className="space-y-6">
+        {/* Tabs */}
+        <div className="space-y-6">
             <div className="flex gap-2 flex-wrap">
               {[
                 { key: "factures", label: "Mes factures" },
@@ -645,7 +638,6 @@ export default function LmnpPage() {
               </div>
             )}
           </div>
-        )}
       </div>
 
       {/* ── Modale simulation fiscale ── */}

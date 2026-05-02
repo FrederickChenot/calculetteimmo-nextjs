@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import { rateLimit } from "@/app/lib/rateLimit";
 
 export async function POST(request) {
+  if (process.env.REGISTRATION_OPEN !== 'true') {
+    return Response.json({ error: "Inscriptions fermées" }, { status: 403 });
+  }
+
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   const { allowed, remaining, resetAt } = rateLimit(ip, 3, 60 * 60 * 1000);
 

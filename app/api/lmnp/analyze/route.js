@@ -1,9 +1,28 @@
 import { sqlLmnp } from "@/app/lib/lmnpDb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { rateLimit } from "@/app/lib/rateLimit";
 
 export async function POST(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
+
+  const rawIp = request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+  const { allowed, resetAt } = rateLimit(`lmnp_analyze_${rawIp}`, 10, 60 * 60 * 1000);
+  if (!allowed) {
+    const minutes = Math.ceil((resetAt - Date.now()) / 60000);
+    return Response.json(
+      { error: `Trop de requêtes. Réessayez dans ${minutes} minutes.` },
+      { status: 429 }
+    );
+  }
+
   const { pdf_base64, filename, annee, save, url_pdf } = await request.json();
+
+  const pdfSizeBytes = Buffer.byteLength(pdf_base64, "base64");
+  if (pdfSizeBytes > 10 * 1024 * 1024) {
+    return Response.json({ error: "PDF trop volumineux (max 10 Mo)" }, { status: 400 });
+  }
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -50,11 +69,10 @@ Règles BOFIP : travaux structurels amortissable 25-40 ans, mobilier/équipement
     return Response.json({ error: "Impossible de parser la réponse IA", raw: rawText }, { status: 500 });
   }
 
-  const session = await getServerSession(authOptions);
   let saved = false;
   let facture_id = null;
 
-  if (save && session?.userId) {
+  if (save && session.userId) {
     const [facture] = await sqlLmnp`
       INSERT INTO lmnp_factures (user_id, filename, annee, url_pdf)
       VALUES (${session.userId}, ${filename}, ${annee}, ${url_pdf || null})

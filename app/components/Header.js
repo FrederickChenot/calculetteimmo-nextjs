@@ -31,6 +31,9 @@ export default function Header() {
           <Link href="/crypto" className="text-sm font-semibold text-zinc-300 hover:text-[#C9A84C] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#C9A84C]/10">
             Crypto
           </Link>
+          <Link href="/lmnp" className="text-sm font-semibold text-zinc-300 hover:text-[#C9A84C] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#C9A84C]/10">
+            Comptabilité LMNP
+          </Link>
           <Link
             href="/blog"
             className="text-sm font-semibold text-zinc-300 hover:text-[#C9A84C] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#C9A84C]/10"

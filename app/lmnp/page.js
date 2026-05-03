@@ -132,7 +132,7 @@ export default function LmnpPage() {
 
   // Edit classification state
   const [editingFacture, setEditingFacture] = useState(null);
-  const [editForm, setEditForm] = useState({ categorie: "divers", traitement: "deductible", duree_amort: "" });
+  const [editForm, setEditForm] = useState({ categorie: "divers", traitement: "deductible", duree_amort: "", fournisseur: "", date_facture: "", montant_ht: "", tva: "", montant_ttc: "" });
 
   // Ventilation expand state
   const [expandedVentRows, setExpandedVentRows] = useState(new Set());
@@ -146,6 +146,19 @@ export default function LmnpPage() {
   // Sélection en masse
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkForm, setBulkForm] = useState({ categorie: "divers", traitement: "deductible", duree_amort: "" });
+
+  // Bien immobilier
+  const [bien, setBien] = useState({ valeur_venale: "", quote_part_terrain: 15, duree_amort: 30, date_debut: "2025-05-19" });
+
+  // Charges récurrentes
+  const [charges, setCharges] = useState({ taxe_fonciere: "", assurance_pno: "", cfe: "", frais_comptabilite: "", interets_emprunt: "", autres: "", autres_libelle: "" });
+
+  // Simulation avancée
+  const [deficitReporte, setDeficitReporte] = useState("");
+  const [tmi, setTmi] = useState("11");
+
+  // Recherche factures
+  const [searchQuery, setSearchQuery] = useState("");
 
 
   useEffect(() => {
@@ -163,6 +176,16 @@ export default function LmnpPage() {
     if (session) fetchYearCounts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  useEffect(() => {
+    if (session) fetchBien();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  useEffect(() => {
+    if (session) fetchCharges();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, annee]);
 
   async function fetchFactures() {
     setFacturesLoading(true);
@@ -183,6 +206,61 @@ export default function LmnpPage() {
       });
       setYearCounts(counts);
     }
+  }
+
+  async function fetchBien() {
+    const res = await fetch("/api/lmnp/bien");
+    const data = await res.json();
+    if (data.bien) setBien({
+      valeur_venale: data.bien.valeur_venale || "",
+      quote_part_terrain: data.bien.quote_part_terrain ?? 15,
+      duree_amort: data.bien.duree_amort ?? 30,
+      date_debut: data.bien.date_debut ? data.bien.date_debut.slice(0, 10) : "",
+    });
+  }
+
+  async function fetchCharges() {
+    const res = await fetch(`/api/lmnp/charges?annee=${annee}`);
+    const data = await res.json();
+    if (data.charges) setCharges({
+      taxe_fonciere: data.charges.taxe_fonciere || "",
+      assurance_pno: data.charges.assurance_pno || "",
+      cfe: data.charges.cfe || "",
+      frais_comptabilite: data.charges.frais_comptabilite || "",
+      interets_emprunt: data.charges.interets_emprunt || "",
+      autres: data.charges.autres || "",
+      autres_libelle: data.charges.autres_libelle || "",
+    });
+  }
+
+  async function saveBien() {
+    await fetch("/api/lmnp/bien", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        valeur_venale: parseFloat(bien.valeur_venale) || 0,
+        quote_part_terrain: parseFloat(bien.quote_part_terrain) || 15,
+        duree_amort: parseInt(bien.duree_amort) || 30,
+        date_debut: bien.date_debut || null,
+      }),
+    });
+  }
+
+  async function saveCharges() {
+    await fetch("/api/lmnp/charges", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        annee,
+        taxe_fonciere: parseFloat(charges.taxe_fonciere) || 0,
+        assurance_pno: parseFloat(charges.assurance_pno) || 0,
+        cfe: parseFloat(charges.cfe) || 0,
+        frais_comptabilite: parseFloat(charges.frais_comptabilite) || 0,
+        interets_emprunt: parseFloat(charges.interets_emprunt) || 0,
+        autres: parseFloat(charges.autres) || 0,
+        autres_libelle: charges.autres_libelle || null,
+      }),
+    });
   }
 
   function addFiles(fileList) {
@@ -315,6 +393,11 @@ export default function LmnpPage() {
       categorie: f.categorie || "divers",
       traitement: f.traitement || "deductible",
       duree_amort: f.duree_amort || "",
+      fournisseur: f.fournisseur || "",
+      date_facture: f.date_facture || "",
+      montant_ht: f.montant_ht || "",
+      tva: f.tva || "",
+      montant_ttc: f.montant_ttc || "",
     });
   }
 
@@ -329,6 +412,11 @@ export default function LmnpPage() {
         duree_amort: editForm.traitement === "amortissable" && editForm.duree_amort
           ? parseInt(editForm.duree_amort)
           : null,
+        fournisseur: editForm.fournisseur || null,
+        date_facture: editForm.date_facture || null,
+        montant_ht: editForm.montant_ht !== "" ? parseFloat(editForm.montant_ht) : null,
+        tva: editForm.tva !== "" ? parseFloat(editForm.tva) : null,
+        montant_ttc: editForm.montant_ttc !== "" ? parseFloat(editForm.montant_ttc) : null,
       }),
     });
     if (res.ok) {
@@ -391,8 +479,45 @@ export default function LmnpPage() {
     }));
   const amortAnnuel = amortDetails.reduce((s, d) => s + d.annuite, 0);
 
+  // Amortissement du bien immobilier
+  const valeurVenale = parseFloat(bien.valeur_venale) || 0;
+  const quotePart = parseFloat(bien.quote_part_terrain) || 15;
+  const dureeAmortBien = parseInt(bien.duree_amort) || 30;
+  const baseAmortissable = valeurVenale * (1 - quotePart / 100);
+  const amortBienAnnuel = dureeAmortBien > 0 ? baseAmortissable / dureeAmortBien : 0;
+
+  // Charges récurrentes totales
+  const totalChargesRec = [
+    parseFloat(charges.taxe_fonciere) || 0,
+    parseFloat(charges.assurance_pno) || 0,
+    parseFloat(charges.cfe) || 0,
+    parseFloat(charges.frais_comptabilite) || 0,
+    parseFloat(charges.interets_emprunt) || 0,
+    parseFloat(charges.autres) || 0,
+  ].reduce((a, b) => a + b, 0);
+
+  const totalAmortAll = amortAnnuel + amortBienAnnuel;
+  const totalDeductibleAll = deductibleHt + totalChargesRec;
+
+  // Simulation fiscale
   const loyer = parseFloat(loyerAnnuel) || 0;
-  const resultatFiscal = loyer - deductibleHt - amortAnnuel;
+  const deficitN1 = parseFloat(deficitReporte) || 0;
+  const resultatFiscalBrut = loyer - totalDeductibleAll - totalAmortAll;
+  const resultatFiscalNet = resultatFiscalBrut - deficitN1;
+
+  const tmiPct = parseFloat(tmi) || 0;
+  const imposable = Math.max(0, resultatFiscalNet);
+  const impotTMI = imposable * (tmiPct / 100);
+  const prelevement = imposable * 0.172;
+  const totalImpot = impotTMI + prelevement;
+
+  // Filtrage des factures par recherche
+  const filteredFactures = searchQuery.trim()
+    ? factures.filter(f =>
+        (f.filename || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (f.fournisseur || "").toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : factures;
 
   if (status === "loading") return null;
   if (!session) return null;
@@ -632,6 +757,34 @@ export default function LmnpPage() {
                   </div>
                 </div>
 
+                {/* Barre de recherche */}
+                {factures.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Rechercher par fichier ou fournisseur…"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className={inputClass + " pr-8"}
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 text-sm"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    {searchQuery && (
+                      <p className="text-xs text-zinc-500">
+                        {filteredFactures.length} résultat{filteredFactures.length !== 1 ? "s" : ""} sur {factures.length}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {facturesLoading && <p className="text-zinc-400 text-sm">Chargement...</p>}
 
                 {!facturesLoading && factures.length === 0 && (
@@ -640,9 +793,13 @@ export default function LmnpPage() {
                   </div>
                 )}
 
-                {factures.length > 0 && (
+                {!facturesLoading && factures.length > 0 && filteredFactures.length === 0 && (
+                  <p className="text-zinc-400 text-sm text-center py-4">Aucun résultat pour « {searchQuery} »</p>
+                )}
+
+                {factures.length > 0 && filteredFactures.length > 0 && (
                   <div className="space-y-3">
-                    {factures.map(f => (
+                    {filteredFactures.map(f => (
                       <div
                         key={f.id}
                         className="bg-[#0d1f21] rounded-xl p-4 flex items-start gap-3"
@@ -879,11 +1036,113 @@ export default function LmnpPage() {
             {/* ── Tableau de bord ── */}
             {activeTab === "dashboard" && (
               <div className="space-y-5">
+
+                {/* Bien immobilier */}
+                <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-lg font-bold text-white">Bien immobilier</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1 block">Valeur vénale (€)</label>
+                      <input
+                        type="number" value={bien.valeur_venale} placeholder="200000"
+                        onChange={e => setBien(b => ({ ...b, valeur_venale: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1 block">Quote-part terrain (%)</label>
+                      <input
+                        type="number" value={bien.quote_part_terrain} placeholder="15"
+                        onChange={e => setBien(b => ({ ...b, quote_part_terrain: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1 block">Durée amortissement (ans)</label>
+                      <input
+                        type="number" value={bien.duree_amort} placeholder="30"
+                        onChange={e => setBien(b => ({ ...b, duree_amort: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1 block">Date début location</label>
+                      <input
+                        type="date" value={bien.date_debut}
+                        onChange={e => setBien(b => ({ ...b, date_debut: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                  {valeurVenale > 0 && (
+                    <div className="bg-[#0d1f21] rounded-xl p-3 flex flex-wrap gap-6 text-sm">
+                      <span className="text-zinc-400">Base amortissable : <span className="text-white font-semibold">{fmt(baseAmortissable)} €</span></span>
+                      <span className="text-zinc-400">Amortissement annuel : <span className="text-orange-400 font-semibold">{fmt(amortBienAnnuel)} €/an</span></span>
+                    </div>
+                  )}
+                  <button
+                    onClick={saveBien}
+                    className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+
+                {/* Charges récurrentes */}
+                <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-lg font-bold text-white">Charges récurrentes — {annee}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      ["taxe_fonciere", "Taxe foncière"],
+                      ["assurance_pno", "Assurance PNO"],
+                      ["cfe", "CFE"],
+                      ["frais_comptabilite", "Frais de comptabilité"],
+                      ["interets_emprunt", "Intérêts d'emprunt"],
+                    ].map(([key, label]) => (
+                      <div key={key}>
+                        <label className="text-xs text-zinc-400 mb-1 block">{label} (€)</label>
+                        <input
+                          type="number" value={charges[key]} placeholder="0"
+                          onChange={e => setCharges(c => ({ ...c, [key]: e.target.value }))}
+                          className={inputClass}
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1 block">Autres (€)</label>
+                      <input
+                        type="number" value={charges.autres} placeholder="0"
+                        onChange={e => setCharges(c => ({ ...c, autres: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-zinc-400 mb-1 block">Libellé autres charges</label>
+                    <input
+                      type="text" value={charges.autres_libelle} placeholder="ex : frais de gestion"
+                      onChange={e => setCharges(c => ({ ...c, autres_libelle: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <span className="text-sm text-zinc-400">
+                      Total : <span className="text-emerald-400 font-semibold">{fmt(totalChargesRec)} €</span>
+                    </span>
+                    <button
+                      onClick={saveCharges}
+                      className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                    >
+                      Enregistrer
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     ["Total factures TTC", `${fmt(totalTtcAll)} €`, "text-white"],
-                    ["Amortissements annuels", `${fmt(amortAnnuel)} €/an`, "text-orange-400"],
-                    ["Charges déductibles HT", `${fmt(deductibleHt)} €`, "text-emerald-400"],
+                    ["Amortissements annuels", `${fmt(totalAmortAll)} €/an`, "text-orange-400"],
+                    ["Charges déductibles", `${fmt(totalDeductibleAll)} €`, "text-emerald-400"],
                     ["TVA totale", `${fmt(totalTva)} €`, "text-[#C9A84C]"],
                   ].map(([label, val, cls]) => (
                     <div key={label} className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-xl p-4">
@@ -944,20 +1203,87 @@ export default function LmnpPage() {
           </div>
       </div>
 
-      {/* ── Modale modification classification ── */}
+      {/* ── Modale modification facture ── */}
       {editingFacture && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
           onClick={() => setEditingFacture(null)}
         >
           <div
-            className="w-full max-w-sm bg-[#0d1f21] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4"
+            className="w-full max-w-md bg-[#0d1f21] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-white">Modifier la classification</h3>
+            <h3 className="text-lg font-bold text-white">Modifier la facture</h3>
             <p className="text-xs text-zinc-500 truncate">{editingFacture.filename}</p>
 
             <div className="space-y-3">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Fournisseur</label>
+                <input
+                  type="text"
+                  value={editForm.fournisseur}
+                  onChange={e => setEditForm(f => ({ ...f, fournisseur: e.target.value }))}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Date facture</label>
+                <input
+                  type="text"
+                  placeholder="JJ/MM/AAAA"
+                  value={editForm.date_facture}
+                  onChange={e => setEditForm(f => ({ ...f, date_facture: e.target.value }))}
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Montant HT (€)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={editForm.montant_ht}
+                    onChange={e => {
+                      const ht = e.target.value;
+                      const tvaVal = parseFloat(editForm.tva) || 0;
+                      setEditForm(f => ({
+                        ...f,
+                        montant_ht: ht,
+                        montant_ttc: ht !== "" ? (parseFloat(ht) + tvaVal).toFixed(2) : f.montant_ttc,
+                      }));
+                    }}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">TVA (€)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={editForm.tva}
+                    onChange={e => {
+                      const tvaVal = e.target.value;
+                      const ht = parseFloat(editForm.montant_ht) || 0;
+                      setEditForm(f => ({
+                        ...f,
+                        tva: tvaVal,
+                        montant_ttc: tvaVal !== "" ? (ht + parseFloat(tvaVal)).toFixed(2) : f.montant_ttc,
+                      }));
+                    }}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Montant TTC (€)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={editForm.montant_ttc}
+                    onChange={e => setEditForm(f => ({ ...f, montant_ttc: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="h-px bg-[#2a4a4d]" />
+
               <div>
                 <label className="text-xs text-zinc-400 mb-1 block">Catégorie</label>
                 <select
@@ -985,8 +1311,7 @@ export default function LmnpPage() {
                 <div>
                   <label className="text-xs text-zinc-400 mb-1 block">Durée d&apos;amortissement (années)</label>
                   <input
-                    type="number"
-                    min="1"
+                    type="number" min="1"
                     value={editForm.duree_amort}
                     onChange={e => setEditForm(f => ({ ...f, duree_amort: e.target.value }))}
                     className={inputClass}
@@ -1024,40 +1349,63 @@ export default function LmnpPage() {
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-white">
-              Simulation fiscale LMNP réel simplifié — {annee}
+              Simulation fiscale LMNP réel — {annee}
             </h3>
 
-            <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Loyer annuel estimé (€)</label>
-              <input
-                type="number"
-                placeholder="12000"
-                value={loyerAnnuel}
-                onChange={e => setLoyerAnnuel(e.target.value)}
-                className={inputClass}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Loyer annuel (€)</label>
+                <input
+                  type="number" placeholder="12000" value={loyerAnnuel}
+                  onChange={e => setLoyerAnnuel(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">TMI (%)</label>
+                <select value={tmi} onChange={e => setTmi(e.target.value)} className={inputClass}>
+                  {["0", "11", "30", "41", "45"].map(t => (
+                    <option key={t} value={t}>{t} %</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs text-zinc-400 mb-1 block">Déficit reporté N-1 (€)</label>
+                <input
+                  type="number" placeholder="0" value={deficitReporte}
+                  onChange={e => setDeficitReporte(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
             </div>
 
-            <div className="bg-[#0d1f21] rounded-xl p-4 space-y-3">
-              {/* Loyer */}
-              <div className="flex justify-between text-sm">
+            <div className="bg-[#0d1f21] rounded-xl p-4 space-y-2.5 text-sm">
+              <div className="flex justify-between">
                 <span className="text-zinc-400">Loyer annuel</span>
                 <span className="font-semibold text-white">{fmt(loyer)} €</span>
               </div>
 
-              {/* Charges déductibles */}
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Charges déductibles HT ({annee})</span>
+              <div className="h-px bg-[#2a4a4d]" />
+
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Charges déductibles factures</span>
                 <span className="font-semibold text-emerald-400">−{fmt(deductibleHt)} €</span>
               </div>
+              {totalChargesRec > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Charges récurrentes</span>
+                  <span className="font-semibold text-emerald-400">−{fmt(totalChargesRec)} €</span>
+                </div>
+              )}
 
-              {/* Amortissements */}
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Amortissements annuels estimés</span>
+              <div className="h-px bg-[#2a4a4d]" />
+
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Amortissements mobilier / travaux</span>
                 <span className="font-semibold text-orange-400">−{fmt(amortAnnuel)} €</span>
               </div>
               {amortDetails.length > 0 && (
-                <div className="ml-4 space-y-1 pt-1">
+                <div className="ml-3 space-y-1">
                   {amortDetails.map((d, i) => (
                     <div key={i} className="flex justify-between text-xs text-zinc-500">
                       <span className="truncate mr-2">{d.label}</span>
@@ -1066,25 +1414,62 @@ export default function LmnpPage() {
                   ))}
                 </div>
               )}
+              {amortBienAnnuel > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Amortissement bien immobilier</span>
+                  <span className="font-semibold text-orange-400">−{fmt(amortBienAnnuel)} €/an</span>
+                </div>
+              )}
 
               <div className="h-px bg-[#2a4a4d]" />
 
-              {/* Résultat */}
-              <div className="flex justify-between items-center">
-                <span className="text-white font-semibold">Résultat fiscal estimé</span>
-                <span className={`text-xl font-bold ${resultatFiscal >= 0 ? "text-[#C9A84C]" : "text-emerald-400"}`}>
-                  {resultatFiscal < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscal))} €
+              <div className="flex justify-between font-semibold">
+                <span className="text-zinc-300">Résultat brut</span>
+                <span className={resultatFiscalBrut >= 0 ? "text-amber-400" : "text-emerald-400"}>
+                  {resultatFiscalBrut < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscalBrut))} €
                 </span>
               </div>
-              <p className={`text-xs font-medium ${resultatFiscal >= 0 ? "text-amber-400" : "text-emerald-400"}`}>
-                {resultatFiscal >= 0
-                  ? "Bénéfice imposable — à déclarer sur formulaire 2031"
-                  : "Déficit — report possible sur les années suivantes (BIC)"}
+
+              {deficitN1 > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Déficit reporté N-1</span>
+                  <span className="font-semibold text-emerald-400">−{fmt(deficitN1)} €</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-white font-bold">Résultat fiscal net</span>
+                <span className={`text-xl font-bold ${resultatFiscalNet >= 0 ? "text-[#C9A84C]" : "text-emerald-400"}`}>
+                  {resultatFiscalNet < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscalNet))} €
+                </span>
+              </div>
+              <p className={`text-xs font-medium ${resultatFiscalNet >= 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                {resultatFiscalNet >= 0
+                  ? "Bénéfice imposable — formulaire 2031"
+                  : `Déficit de ${fmt(Math.abs(resultatFiscalNet))} € — reportable sur les années suivantes`}
               </p>
+
+              {resultatFiscalNet > 0 && tmiPct > 0 && (
+                <>
+                  <div className="h-px bg-[#2a4a4d]" />
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400">Impôt TMI ({tmiPct}%)</span>
+                    <span className="text-[#C9A84C]">{fmt(impotTMI)} €</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400">Prélèvements sociaux (17,2%)</span>
+                    <span className="text-[#C9A84C]">{fmt(prelevement)} €</span>
+                  </div>
+                  <div className="flex justify-between font-bold">
+                    <span className="text-white">Total impôt estimé</span>
+                    <span className="text-[#C9A84C]">{fmt(totalImpot)} €</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <p className="text-xs text-zinc-500 italic">
-              Simulation indicative, consultez un expert-comptable
+              Simulation indicative — consultez un expert-comptable
             </p>
 
             <button

@@ -32,5 +32,31 @@ export async function GET() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  await sqlLmnp`
+    CREATE TABLE IF NOT EXISTS lmnp_bien (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      valeur_venale NUMERIC(10,2),
+      quote_part_terrain NUMERIC(5,2) DEFAULT 15,
+      duree_amort INTEGER DEFAULT 30,
+      date_debut DATE,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sqlLmnp`
+    CREATE TABLE IF NOT EXISTS lmnp_charges_recurrentes (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      annee INTEGER NOT NULL,
+      taxe_fonciere NUMERIC(10,2) DEFAULT 0,
+      assurance_pno NUMERIC(10,2) DEFAULT 0,
+      cfe NUMERIC(10,2) DEFAULT 0,
+      frais_comptabilite NUMERIC(10,2) DEFAULT 0,
+      interets_emprunt NUMERIC(10,2) DEFAULT 0,
+      autres NUMERIC(10,2) DEFAULT 0,
+      autres_libelle TEXT,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
   return Response.json({ ok: true });
 }

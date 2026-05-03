@@ -39,7 +39,8 @@ export async function PUT(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { analyse_id, analyse_ids, categorie, traitement, duree_amort } = await request.json();
+  const { analyse_id, analyse_ids, categorie, traitement, duree_amort,
+          fournisseur, date_facture, montant_ht, tva, montant_ttc } = await request.json();
   const dur = duree_amort ?? null;
 
   if (Array.isArray(analyse_ids) && analyse_ids.length > 0) {
@@ -54,7 +55,12 @@ export async function PUT(request) {
   } else {
     await sqlLmnp`
       UPDATE lmnp_analyses
-      SET categorie = ${categorie}, traitement = ${traitement}, duree_amort = ${dur}
+      SET categorie = ${categorie}, traitement = ${traitement}, duree_amort = ${dur},
+          fournisseur    = COALESCE(${fournisseur    ?? null}, fournisseur),
+          date_facture   = COALESCE(${date_facture   ?? null}, date_facture),
+          montant_ht     = COALESCE(${montant_ht     ?? null}, montant_ht),
+          tva            = COALESCE(${tva            ?? null}, tva),
+          montant_ttc    = COALESCE(${montant_ttc    ?? null}, montant_ttc)
       WHERE id = ${analyse_id}
         AND facture_id IN (
           SELECT id FROM lmnp_factures WHERE user_id = ${session.userId}

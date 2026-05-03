@@ -1,4 +1,4 @@
-import { getDownloadUrl } from "@vercel/blob";
+import { head } from "@vercel/blob";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -10,8 +10,8 @@ export async function GET(request) {
   const url = searchParams.get("url");
   if (!url) return Response.json({ error: "Paramètre url manquant" }, { status: 400 });
 
-  console.log("[blob-url] generating signed URL for:", url);
-  const signedUrl = await getDownloadUrl(url);
-  console.log("[blob-url] signed URL generated:", signedUrl);
-  return Response.json({ signedUrl });
+  console.log("[blob-url] appelé avec:", url);
+  const blob = await head(url);
+  console.log("[blob-url] downloadUrl:", blob.downloadUrl);
+  return Response.json({ signedUrl: blob.downloadUrl });
 }

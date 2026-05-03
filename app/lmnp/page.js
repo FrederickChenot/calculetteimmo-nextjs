@@ -244,10 +244,18 @@ export default function LmnpPage() {
 
   async function openPdf(url_pdf, id) {
     setPdfLoading(id);
+    // Ouvrir l'onglet immédiatement (contexte click) pour éviter le popup blocker
+    const newTab = window.open("", "_blank");
     try {
       const res = await fetch(`/api/lmnp/blob-url?url=${encodeURIComponent(url_pdf)}`);
       const data = await res.json();
-      window.open(data.signedUrl, "_blank");
+      if (data.signedUrl && newTab) {
+        newTab.location.href = data.signedUrl;
+      } else {
+        newTab?.close();
+      }
+    } catch {
+      newTab?.close();
     } finally {
       setPdfLoading(null);
     }

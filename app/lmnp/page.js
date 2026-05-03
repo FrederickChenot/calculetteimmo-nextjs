@@ -137,6 +137,9 @@ export default function LmnpPage() {
   // Ventilation expand state
   const [expandedVentRows, setExpandedVentRows] = useState(new Set());
 
+  // PDF loading state
+  const [pdfLoading, setPdfLoading] = useState(null);
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/crypto/login");
   }, [status, router]);
@@ -237,6 +240,17 @@ export default function LmnpPage() {
       body: JSON.stringify({ id }),
     });
     setFactures(prev => prev.filter(f => f.id !== id));
+  }
+
+  async function openPdf(url_pdf, id) {
+    setPdfLoading(id);
+    try {
+      const res = await fetch(`/api/lmnp/blob-url?url=${encodeURIComponent(url_pdf)}`);
+      const data = await res.json();
+      if (data.signedUrl) window.open(data.signedUrl, "_blank");
+    } finally {
+      setPdfLoading(null);
+    }
   }
 
   function openEdit(f) {
@@ -534,14 +548,17 @@ export default function LmnpPage() {
                       >
                         <div className="flex-1 min-w-0">
                           {f.url_pdf ? (
-                            <a
-                              href={f.url_pdf}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-white font-medium truncate block cursor-pointer hover:underline hover:text-[#C9A84C] transition-colors"
+                            <button
+                              onClick={() => openPdf(f.url_pdf, f.id)}
+                              disabled={pdfLoading === f.id}
+                              className="text-white font-medium truncate block max-w-full text-left hover:underline hover:text-[#C9A84C] transition-colors disabled:cursor-wait"
                             >
-                              {f.filename}
-                            </a>
+                              {pdfLoading === f.id ? (
+                                <span className="flex items-center gap-1.5">
+                                  <Spinner />{f.filename}
+                                </span>
+                              ) : f.filename}
+                            </button>
                           ) : (
                             <p className="text-white font-medium truncate">{f.filename}</p>
                           )}

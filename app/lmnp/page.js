@@ -181,6 +181,7 @@ export default function LmnpPage() {
     setSaveConfirm(null);
 
     let savedCount = 0;
+    const savedAnnees = new Set();
 
     for (let i = 0; i < pdfFiles.length; i++) {
       const file = pdfFiles[i];
@@ -210,7 +211,7 @@ export default function LmnpPage() {
           saved: data.saved || false,
           error: data.error || null,
         }]);
-        if (data.saved) { savedCount++; fetchFactures(); }
+        if (data.saved) { savedCount++; if (data.annee) savedAnnees.add(data.annee); fetchFactures(); }
       } catch {
         setAnalyseResults(prev => [...prev, {
           file,
@@ -224,8 +225,11 @@ export default function LmnpPage() {
     setAnalyzing(false);
     setAnalyzeProgress(null);
     if (savedCount > 0) {
+      const anneesLabel = savedAnnees.size > 0
+        ? [...savedAnnees].sort().join(", ")
+        : annee;
       setSaveConfirm(
-        `${savedCount} facture${savedCount > 1 ? "s" : ""} sauvegardée${savedCount > 1 ? "s" : ""} dans votre historique ${annee}`
+        `${savedCount} facture${savedCount > 1 ? "s" : ""} sauvegardée${savedCount > 1 ? "s" : ""} dans votre historique ${anneesLabel}`
       );
     }
   }

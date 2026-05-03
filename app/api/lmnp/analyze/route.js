@@ -103,5 +103,5 @@ Règles BOFIP : travaux structurels amortissable 25-40 ans, mobilier/équipement
     saved = true;
   }
 
-  return Response.json({ analyse, saved, facture_id });
+  return Response.json({ analyse, saved, facture_id, annee: anneeEffective });
 }

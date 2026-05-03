@@ -832,6 +832,7 @@ export default function LmnpPage() {
                                           <th className="text-left py-1 pl-4 font-medium">Fichier</th>
                                           <th className="text-left py-1 font-medium">Fournisseur</th>
                                           <th className="text-left py-1 font-medium">Montant HT</th>
+                                          <th className="text-left py-1 font-medium">Durée</th>
                                           <th className="text-left py-1 font-medium">Annuité/an</th>
                                         </tr>
                                       </thead>
@@ -841,6 +842,11 @@ export default function LmnpPage() {
                                             <td className="py-1.5 pl-4 text-zinc-400 max-w-[180px] truncate">{item.filename}</td>
                                             <td className="py-1.5 text-zinc-400">{item.fournisseur || "—"}</td>
                                             <td className="py-1.5 text-zinc-300">{fmt(item.montant_ht)} €</td>
+                                            <td className="py-1.5 text-zinc-400">
+                                              {item.traitement === "amortissable" && item.duree_amort
+                                                ? `${item.duree_amort} ans`
+                                                : "—"}
+                                            </td>
                                             <td className="py-1.5 text-orange-400">
                                               {item.traitement === "amortissable" && item.duree_amort
                                                 ? `${fmt(Number(item.montant_ht || 0) / Number(item.duree_amort))} €/an`

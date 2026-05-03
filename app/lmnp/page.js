@@ -537,12 +537,15 @@ export default function LmnpPage() {
                           {f.url_pdf ? (
                             <span
                               onClick={() => window.open(f.url_pdf, "_blank")}
-                              className="text-white font-medium truncate block cursor-pointer hover:underline hover:text-[#C9A84C] transition-colors"
+                              className="cursor-pointer hover:underline text-[#C9A84C] font-medium truncate block"
                             >
                               {f.filename}
                             </span>
                           ) : (
-                            <p className="text-white font-medium truncate">{f.filename}</p>
+                            <>
+                              <span className="text-zinc-300 font-medium truncate block">{f.filename}</span>
+                              <span className="text-zinc-600 text-xs">(PDF non disponible)</span>
+                            </>
                           )}
                           <p className="text-zinc-500 text-xs mt-0.5">
                             {f.fournisseur} · {f.date_facture || new Date(f.created_at).toLocaleDateString("fr-FR")}

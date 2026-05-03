@@ -209,6 +209,7 @@ export default function LmnpPage() {
           file,
           analyse: data.analyse || null,
           saved: data.saved || false,
+          doublon: data.doublon || false,
           error: data.error || null,
         }]);
         if (data.saved) { savedCount++; if (data.annee) savedAnnees.add(data.annee); fetchFactures(); }
@@ -457,6 +458,11 @@ export default function LmnpPage() {
             <div className="space-y-3">
               {analyseResults.map((r, i) => (
                 <div key={i}>
+                  {r.doublon && (
+                    <p className="text-amber-400 text-sm px-1">
+                      ⚠ {r.file.name} : Facture déjà existante (même fournisseur et montant)
+                    </p>
+                  )}
                   {r.error && (
                     <p className="text-red-400 text-sm px-1">
                       {r.file.name} : {r.error}

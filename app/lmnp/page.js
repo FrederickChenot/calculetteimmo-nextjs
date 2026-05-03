@@ -137,6 +137,12 @@ export default function LmnpPage() {
   // Ventilation expand state
   const [expandedVentRows, setExpandedVentRows] = useState(new Set());
 
+  // Résultats analyse pliables
+  const [expandedResults, setExpandedResults] = useState(new Set());
+
+  // Counts factures par année
+  const [yearCounts, setYearCounts] = useState({});
+
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/crypto/login");
@@ -149,6 +155,11 @@ export default function LmnpPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, annee]);
 
+  useEffect(() => {
+    if (session) fetchYearCounts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
   async function fetchFactures() {
     setFacturesLoading(true);
     const res = await fetch(`/api/lmnp/factures?annee=${annee}`);
@@ -156,6 +167,18 @@ export default function LmnpPage() {
     if (Array.isArray(data.factures)) setFactures(data.factures);
     if (data.isOwner !== undefined) setIsOwner(data.isOwner);
     setFacturesLoading(false);
+  }
+
+  async function fetchYearCounts() {
+    const res = await fetch("/api/lmnp/factures");
+    const data = await res.json();
+    if (Array.isArray(data.factures)) {
+      const counts = {};
+      data.factures.forEach(f => {
+        counts[f.annee] = (counts[f.annee] || 0) + 1;
+      });
+      setYearCounts(counts);
+    }
   }
 
   function addFiles(fileList) {
@@ -212,7 +235,7 @@ export default function LmnpPage() {
           doublon: data.doublon || false,
           error: data.error || null,
         }]);
-        if (data.saved) { savedCount++; if (data.annee) savedAnnees.add(data.annee); fetchFactures(); }
+        if (data.saved) { savedCount++; if (data.annee) savedAnnees.add(data.annee); fetchFactures(); fetchYearCounts(); }
       } catch {
         setAnalyseResults(prev => [...prev, {
           file,
@@ -245,6 +268,7 @@ export default function LmnpPage() {
       body: JSON.stringify({ id }),
     });
     setFactures(prev => prev.filter(f => f.id !== id));
+    fetchYearCounts();
   }
 
   function openEdit(f) {
@@ -457,7 +481,7 @@ export default function LmnpPage() {
 
           {/* Results */}
           {analyseResults.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {analyseResults.map((r, i) => (
                 <div key={i}>
                   {r.doublon && (
@@ -471,10 +495,34 @@ export default function LmnpPage() {
                     </p>
                   )}
                   {r.analyse && (
-                    <AnalyseCard
-                      analyse={r.analyse}
-                      filename={analyseResults.length > 1 ? r.file.name : null}
-                    />
+                    <div className="bg-[#0d1f21] rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setExpandedResults(prev => {
+                          const next = new Set(prev);
+                          next.has(i) ? next.delete(i) : next.add(i);
+                          return next;
+                        })}
+                        className="w-full flex items-center justify-between px-4 py-3 text-left gap-3"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="text-emerald-400 text-sm flex-shrink-0">✓</span>
+                          <span className="text-white font-medium truncate">{r.analyse.fournisseur}</span>
+                          <span className="text-zinc-400 text-sm flex-shrink-0">— {fmt(r.analyse.montant_ttc)} €</span>
+                          <CategoryBadge cat={r.analyse.categorie} />
+                        </div>
+                        <span className="text-zinc-500 text-xs flex-shrink-0">
+                          {expandedResults.has(i) ? "▲" : "▼"}
+                        </span>
+                      </button>
+                      {expandedResults.has(i) && (
+                        <div className="px-4 pb-4">
+                          <AnalyseCard
+                            analyse={r.analyse}
+                            filename={analyseResults.length > 1 ? r.file.name : null}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
@@ -525,6 +573,9 @@ export default function LmnpPage() {
                         }`}
                       >
                         {y}
+                        <span className={`ml-1.5 text-xs font-normal ${annee === y ? "text-black/60" : "text-zinc-600"}`}>
+                          ({yearCounts[y] || 0})
+                        </span>
                       </button>
                     ))}
                   </div>

@@ -143,6 +143,10 @@ export default function LmnpPage() {
   // Counts factures par année
   const [yearCounts, setYearCounts] = useState({});
 
+  // Sélection en masse
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkForm, setBulkForm] = useState({ categorie: "divers", traitement: "deductible", duree_amort: "" });
+
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/crypto/login");
@@ -269,6 +273,40 @@ export default function LmnpPage() {
     });
     setFactures(prev => prev.filter(f => f.id !== id));
     fetchYearCounts();
+  }
+
+  function toggleSelect(analyse_id) {
+    if (!analyse_id) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(analyse_id) ? next.delete(analyse_id) : next.add(analyse_id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const ids = factures.filter(f => f.analyse_id).map(f => f.analyse_id);
+    const allSelected = ids.length > 0 && ids.every(id => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(ids));
+  }
+
+  async function applyBulk() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    await fetch("/api/lmnp/factures", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        analyse_ids: ids,
+        categorie: bulkForm.categorie,
+        traitement: bulkForm.traitement,
+        duree_amort: bulkForm.traitement === "amortissable" && bulkForm.duree_amort
+          ? parseInt(bulkForm.duree_amort)
+          : null,
+      }),
+    });
+    setSelectedIds(new Set());
+    await fetchFactures();
   }
 
   function openEdit(f) {
@@ -560,12 +598,25 @@ export default function LmnpPage() {
             {activeTab === "factures" && (
               <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5">
                 <div className="flex items-center justify-between flex-wrap gap-3">
-                  <h2 className="text-lg font-bold text-white">Mes factures</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-bold text-white">Mes factures</h2>
+                    {factures.length > 0 && (
+                      <button
+                        onClick={toggleSelectAll}
+                        className="text-xs text-zinc-400 hover:text-[#C9A84C] transition-colors"
+                      >
+                        {factures.filter(f => f.analyse_id).length > 0 &&
+                         factures.filter(f => f.analyse_id).every(f => selectedIds.has(f.analyse_id))
+                          ? "Désélectionner tout"
+                          : "Tout sélectionner"}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     {[2024, 2025, 2026].map(y => (
                       <button
                         key={y}
-                        onClick={() => setAnnee(y)}
+                        onClick={() => { setAnnee(y); setSelectedIds(new Set()); }}
                         className={`px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
                           annee === y
                             ? "bg-[#C9A84C] text-black"
@@ -594,8 +645,16 @@ export default function LmnpPage() {
                     {factures.map(f => (
                       <div
                         key={f.id}
-                        className="bg-[#0d1f21] rounded-xl p-4 flex items-start justify-between gap-4"
+                        className="bg-[#0d1f21] rounded-xl p-4 flex items-start gap-3"
                       >
+                        <input
+                          type="checkbox"
+                          checked={!!f.analyse_id && selectedIds.has(f.analyse_id)}
+                          onChange={() => toggleSelect(f.analyse_id)}
+                          disabled={!f.analyse_id}
+                          className="mt-1 h-4 w-4 accent-[#C9A84C] cursor-pointer flex-shrink-0"
+                        />
+                        <div className="flex flex-1 items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           {f.url_pdf ? (
                             <span
@@ -634,8 +693,67 @@ export default function LmnpPage() {
                             Supprimer
                           </button>
                         </div>
+                        </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Barre modification en masse */}
+                {selectedIds.size > 0 && (
+                  <div className="bg-[#0d1f21] ring-1 ring-[#C9A84C]/30 rounded-xl p-4 space-y-3">
+                    <p className="text-sm font-semibold text-white">
+                      {selectedIds.size} facture{selectedIds.size > 1 ? "s" : ""} sélectionnée{selectedIds.size > 1 ? "s" : ""}
+                    </p>
+                    <div className="flex flex-wrap gap-3 items-end">
+                      <div>
+                        <label className="text-xs text-zinc-400 mb-1 block">Catégorie</label>
+                        <select
+                          value={bulkForm.categorie}
+                          onChange={e => setBulkForm(f => ({ ...f, categorie: e.target.value }))}
+                          className="rounded-lg border border-[#2a4a4d] bg-[#12282A] px-3 py-2 text-zinc-100 focus:border-[#C9A84C] focus:outline-none text-sm"
+                        >
+                          {["travaux", "mobilier", "equipement", "charges", "honoraires", "divers"].map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-400 mb-1 block">Traitement</label>
+                        <select
+                          value={bulkForm.traitement}
+                          onChange={e => setBulkForm(f => ({ ...f, traitement: e.target.value }))}
+                          className="rounded-lg border border-[#2a4a4d] bg-[#12282A] px-3 py-2 text-zinc-100 focus:border-[#C9A84C] focus:outline-none text-sm"
+                        >
+                          <option value="amortissable">amortissable</option>
+                          <option value="deductible">deductible</option>
+                        </select>
+                      </div>
+                      {bulkForm.traitement === "amortissable" && (
+                        <div>
+                          <label className="text-xs text-zinc-400 mb-1 block">Durée (ans)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={bulkForm.duree_amort}
+                            onChange={e => setBulkForm(f => ({ ...f, duree_amort: e.target.value }))}
+                            className="rounded-lg border border-[#2a4a4d] bg-[#12282A] px-3 py-2 text-zinc-100 focus:border-[#C9A84C] focus:outline-none text-sm w-24"
+                          />
+                        </div>
+                      )}
+                      <button
+                        onClick={applyBulk}
+                        className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                      >
+                        Appliquer à la sélection
+                      </button>
+                      <button
+                        onClick={() => setSelectedIds(new Set())}
+                        className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                      >
+                        Annuler
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

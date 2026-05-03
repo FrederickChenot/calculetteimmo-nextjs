@@ -247,7 +247,7 @@ export default function LmnpPage() {
     try {
       const res = await fetch(`/api/lmnp/blob-url?url=${encodeURIComponent(url_pdf)}`);
       const data = await res.json();
-      if (data.signedUrl) window.open(data.signedUrl, "_blank");
+      window.open(data.signedUrl, "_blank");
     } finally {
       setPdfLoading(null);
     }

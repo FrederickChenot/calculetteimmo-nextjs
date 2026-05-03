@@ -10,6 +10,8 @@ export async function GET(request) {
   const url = searchParams.get("url");
   if (!url) return Response.json({ error: "Paramètre url manquant" }, { status: 400 });
 
+  console.log("[blob-url] generating signed URL for:", url);
   const signedUrl = await getDownloadUrl(url);
+  console.log("[blob-url] signed URL generated:", signedUrl);
   return Response.json({ signedUrl });
 }

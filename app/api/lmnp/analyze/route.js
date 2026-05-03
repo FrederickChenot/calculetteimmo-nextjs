@@ -69,13 +69,23 @@ Règles BOFIP : travaux structurels amortissable 25-40 ans, mobilier/équipement
     return Response.json({ error: "Impossible de parser la réponse IA", raw: rawText }, { status: 500 });
   }
 
+  // Année depuis date_facture (JJ/MM/AAAA), fallback sur annee du body
+  let anneeEffective = annee;
+  if (analyse.date_facture) {
+    const parts = analyse.date_facture.split("/");
+    if (parts.length === 3) {
+      const y = parseInt(parts[2]);
+      if (y >= 2000 && y <= 2100) anneeEffective = y;
+    }
+  }
+
   let saved = false;
   let facture_id = null;
 
   if (save && session.userId) {
     const [facture] = await sqlLmnp`
       INSERT INTO lmnp_factures (user_id, filename, annee, url_pdf)
-      VALUES (${session.userId}, ${filename}, ${annee}, ${url_pdf || null})
+      VALUES (${session.userId}, ${filename}, ${anneeEffective}, ${url_pdf || null})
       RETURNING id
     `;
     facture_id = facture.id;

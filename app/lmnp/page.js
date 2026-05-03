@@ -99,17 +99,10 @@ async function uploadToBlob(file) {
     const fd = new FormData();
     fd.append("file", file);
     const res = await fetch("/api/lmnp/upload", { method: "POST", body: fd });
-    console.log("uploadToBlob status:", res.status);
-    if (!res.ok) {
-      const err = await res.text();
-      console.log("uploadToBlob error:", err);
-      return null;
-    }
+    if (!res.ok) return null;
     const data = await res.json();
-    console.log("uploadToBlob data:", data);
     return data.url || null;
-  } catch(e) {
-    console.log("uploadToBlob exception:", e);
+  } catch {
     return null;
   }
 }

@@ -232,6 +232,8 @@ export default function LmnpPage() {
       setSaveConfirm(
         `${savedCount} facture${savedCount > 1 ? "s" : ""} sauvegardée${savedCount > 1 ? "s" : ""} dans votre historique ${anneesLabel}`
       );
+      setPdfFiles([]);
+      setTimeout(() => setSaveConfirm(null), 5000);
     }
   }
 

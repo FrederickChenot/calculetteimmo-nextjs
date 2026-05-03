@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -130,6 +130,13 @@ export default function LmnpPage() {
   const [showSimulation, setShowSimulation] = useState(false);
   const [loyerAnnuel, setLoyerAnnuel] = useState("");
 
+  // Edit classification state
+  const [editingFacture, setEditingFacture] = useState(null);
+  const [editForm, setEditForm] = useState({ categorie: "divers", traitement: "deductible", duree_amort: "" });
+
+  // Ventilation expand state
+  const [expandedVentRows, setExpandedVentRows] = useState(new Set());
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/crypto/login");
   }, [status, router]);
@@ -232,6 +239,34 @@ export default function LmnpPage() {
     setFactures(prev => prev.filter(f => f.id !== id));
   }
 
+  function openEdit(f) {
+    setEditingFacture(f);
+    setEditForm({
+      categorie: f.categorie || "divers",
+      traitement: f.traitement || "deductible",
+      duree_amort: f.duree_amort || "",
+    });
+  }
+
+  async function saveEdit() {
+    const res = await fetch("/api/lmnp/factures", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        analyse_id: editingFacture.analyse_id,
+        categorie: editForm.categorie,
+        traitement: editForm.traitement,
+        duree_amort: editForm.traitement === "amortissable" && editForm.duree_amort
+          ? parseInt(editForm.duree_amort)
+          : null,
+      }),
+    });
+    if (res.ok) {
+      await fetchFactures();
+      setEditingFacture(null);
+    }
+  }
+
   async function exportCSV() {
     const res = await fetch(`/api/lmnp/export?annee=${annee}`);
     if (!res.ok) return;
@@ -249,12 +284,16 @@ export default function LmnpPage() {
     const cat = f.categorie || "divers";
     const trait = f.traitement || "deductible";
     const key = `${cat}__${trait}`;
-    if (!acc[key]) acc[key] = { cat, traitement: trait, count: 0, totalHt: 0, totalTtc: 0, amortAnnuel: 0 };
+    if (!acc[key]) acc[key] = { cat, traitement: trait, count: 0, totalHt: 0, totalTtc: 0, amortAnnuel: 0, items: [], totalAmortHt: 0, sumWeightedDuree: 0 };
     acc[key].count++;
     acc[key].totalHt += Number(f.montant_ht || 0);
     acc[key].totalTtc += Number(f.montant_ttc || 0);
+    acc[key].items.push(f);
     if (trait === "amortissable" && f.duree_amort) {
-      acc[key].amortAnnuel += Number(f.montant_ht || 0) / Number(f.duree_amort);
+      const ht = Number(f.montant_ht || 0);
+      acc[key].amortAnnuel += ht / Number(f.duree_amort);
+      acc[key].totalAmortHt += ht;
+      acc[key].sumWeightedDuree += ht * Number(f.duree_amort);
     }
     return acc;
   }, {});
@@ -277,6 +316,8 @@ export default function LmnpPage() {
     .map(f => ({
       label: f.fournisseur || f.description || f.filename,
       annuite: Number(f.montant_ht || 0) / Number(f.duree_amort),
+      montantHt: Number(f.montant_ht || 0),
+      dureeAmort: Number(f.duree_amort),
     }));
   const amortAnnuel = amortDetails.reduce((s, d) => s + d.annuite, 0);
 
@@ -478,28 +519,38 @@ export default function LmnpPage() {
                     {factures.map(f => (
                       <div
                         key={f.id}
-                        className="bg-[#0d1f21] rounded-xl p-4 flex items-center justify-between gap-4"
+                        className="bg-[#0d1f21] rounded-xl p-4 flex items-start justify-between gap-4"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate">{f.filename}</p>
+                          {f.url_pdf ? (
+                            <a
+                              href={f.url_pdf}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white font-medium truncate block cursor-pointer hover:underline hover:text-[#C9A84C] transition-colors"
+                            >
+                              {f.filename}
+                            </a>
+                          ) : (
+                            <p className="text-white font-medium truncate">{f.filename}</p>
+                          )}
                           <p className="text-zinc-500 text-xs mt-0.5">
-                            {f.fournisseur} · {new Date(f.created_at).toLocaleDateString("fr-FR")}
+                            {f.fournisseur} · {f.date_facture || new Date(f.created_at).toLocaleDateString("fr-FR")}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                           <span className="text-white font-semibold text-sm">{fmt(f.montant_ttc)} €</span>
                           <CategoryBadge cat={f.categorie} />
                           <TraitementBadge traitement={f.traitement} />
-                          {f.url_pdf && (
-                            <a
-                              href={f.url_pdf}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#C9A84C] hover:underline ml-1"
-                            >
-                              Voir PDF
-                            </a>
+                          {f.traitement === "amortissable" && f.duree_amort && (
+                            <span className="text-xs text-zinc-500">· {f.duree_amort} ans</span>
                           )}
+                          <button
+                            onClick={() => openEdit(f)}
+                            className="text-xs text-zinc-400 hover:text-[#C9A84C] transition-colors ml-1 border border-[#2a4a4d] px-2 py-0.5 rounded"
+                          >
+                            Modifier
+                          </button>
                           <button
                             onClick={() => deleteFacture(f.id)}
                             className="text-zinc-600 hover:text-red-400 transition-colors text-xs ml-1"
@@ -546,18 +597,71 @@ export default function LmnpPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(ventilation).map(([key, v]) => (
-                          <tr key={key} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21] transition-colors">
-                            <td className="px-3 py-3"><CategoryBadge cat={v.cat} /></td>
-                            <td className="px-3 py-3"><TraitementBadge traitement={v.traitement} /></td>
-                            <td className="px-3 py-3 text-zinc-300">{v.count}</td>
-                            <td className="px-3 py-3 text-zinc-300">{fmt(v.totalHt)} €</td>
-                            <td className="px-3 py-3 text-white font-medium">{fmt(v.totalTtc)} €</td>
-                            <td className="px-3 py-3 text-orange-400">
-                              {v.amortAnnuel > 0 ? `${fmt(v.amortAnnuel)} €` : "—"}
-                            </td>
-                          </tr>
-                        ))}
+                        {Object.entries(ventilation).map(([key, v]) => {
+                          const isExpanded = expandedVentRows.has(key);
+                          const avgDuree = v.traitement === "amortissable" && v.totalAmortHt > 0
+                            ? Math.round(v.sumWeightedDuree / v.totalAmortHt)
+                            : null;
+                          return (
+                            <React.Fragment key={key}>
+                              <tr
+                                className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21] transition-colors cursor-pointer"
+                                onClick={() => setExpandedVentRows(prev => {
+                                  const next = new Set(prev);
+                                  next.has(key) ? next.delete(key) : next.add(key);
+                                  return next;
+                                })}
+                              >
+                                <td className="px-3 py-3"><CategoryBadge cat={v.cat} /></td>
+                                <td className="px-3 py-3">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <TraitementBadge traitement={v.traitement} />
+                                    {avgDuree && <span className="text-xs text-zinc-500">moy. {avgDuree} ans</span>}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-3 text-zinc-300">{v.count}</td>
+                                <td className="px-3 py-3 text-zinc-300">{fmt(v.totalHt)} €</td>
+                                <td className="px-3 py-3 text-white font-medium">{fmt(v.totalTtc)} €</td>
+                                <td className="px-3 py-3 text-orange-400">
+                                  <div className="flex items-center justify-between">
+                                    <span>{v.amortAnnuel > 0 ? `${fmt(v.amortAnnuel)} €` : "—"}</span>
+                                    <span className="text-zinc-500 ml-3 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr className="bg-[#0a1a1c]">
+                                  <td colSpan={6} className="px-3 py-0">
+                                    <table className="w-full text-xs mb-2 mt-1">
+                                      <thead>
+                                        <tr className="text-zinc-500 border-b border-[#1a3a3d]">
+                                          <th className="text-left py-1 pl-4 font-medium">Fichier</th>
+                                          <th className="text-left py-1 font-medium">Fournisseur</th>
+                                          <th className="text-left py-1 font-medium">Montant HT</th>
+                                          <th className="text-left py-1 font-medium">Annuité/an</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {v.items.map((item, idx) => (
+                                          <tr key={idx} className="border-t border-[#1a3a3d]">
+                                            <td className="py-1.5 pl-4 text-zinc-400 max-w-[180px] truncate">{item.filename}</td>
+                                            <td className="py-1.5 text-zinc-400">{item.fournisseur || "—"}</td>
+                                            <td className="py-1.5 text-zinc-300">{fmt(item.montant_ht)} €</td>
+                                            <td className="py-1.5 text-orange-400">
+                                              {item.traitement === "amortissable" && item.duree_amort
+                                                ? `${fmt(Number(item.montant_ht || 0) / Number(item.duree_amort))} €/an`
+                                                : "—"}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
                         <tr className="border-t-2 border-[#C9A84C]/30 bg-[#0d1f21]">
                           <td className="px-3 py-3 font-bold text-white" colSpan={2}>Total</td>
                           <td className="px-3 py-3 font-bold text-white">{factures.length}</td>
@@ -640,6 +744,75 @@ export default function LmnpPage() {
           </div>
       </div>
 
+      {/* ── Modale modification classification ── */}
+      {editingFacture && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setEditingFacture(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#0d1f21] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-white">Modifier la classification</h3>
+            <p className="text-xs text-zinc-500 truncate">{editingFacture.filename}</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Catégorie</label>
+                <select
+                  value={editForm.categorie}
+                  onChange={e => setEditForm(f => ({ ...f, categorie: e.target.value }))}
+                  className={inputClass}
+                >
+                  {["travaux", "mobilier", "equipement", "charges", "honoraires", "divers"].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Traitement</label>
+                <select
+                  value={editForm.traitement}
+                  onChange={e => setEditForm(f => ({ ...f, traitement: e.target.value }))}
+                  className={inputClass}
+                >
+                  <option value="amortissable">amortissable</option>
+                  <option value="deductible">deductible</option>
+                </select>
+              </div>
+              {editForm.traitement === "amortissable" && (
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Durée d&apos;amortissement (années)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editForm.duree_amort}
+                    onChange={e => setEditForm(f => ({ ...f, duree_amort: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={saveEdit}
+                className="flex-1 bg-[#C9A84C] text-black font-bold py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+              >
+                Enregistrer
+              </button>
+              <button
+                onClick={() => setEditingFacture(null)}
+                className="flex-1 border border-[#2a4a4d] text-zinc-400 py-2 rounded-lg text-sm hover:border-zinc-500 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Modale simulation fiscale ── */}
       {showSimulation && (
         <div
@@ -688,7 +861,7 @@ export default function LmnpPage() {
                   {amortDetails.map((d, i) => (
                     <div key={i} className="flex justify-between text-xs text-zinc-500">
                       <span className="truncate mr-2">{d.label}</span>
-                      <span className="flex-shrink-0">{fmt(d.annuite)} €/an</span>
+                      <span className="flex-shrink-0">{fmt(d.annuite)} €/an ({fmt(d.montantHt)} € / {d.dureeAmort} ans)</span>
                     </div>
                   ))}
                 </div>

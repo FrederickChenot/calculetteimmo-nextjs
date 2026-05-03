@@ -35,6 +35,22 @@ export async function GET(request) {
   return Response.json({ factures: rows, isOwner });
 }
 
+export async function PUT(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
+
+  const { analyse_id, categorie, traitement, duree_amort } = await request.json();
+  await sqlLmnp`
+    UPDATE lmnp_analyses
+    SET categorie = ${categorie}, traitement = ${traitement}, duree_amort = ${duree_amort ?? null}
+    WHERE id = ${analyse_id}
+      AND facture_id IN (
+        SELECT id FROM lmnp_factures WHERE user_id = ${session.userId}
+      )
+  `;
+  return Response.json({ ok: true });
+}
+
 export async function DELETE(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });

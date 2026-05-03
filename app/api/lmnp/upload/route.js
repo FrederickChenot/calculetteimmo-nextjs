@@ -1,4 +1,5 @@
 import { put } from "@vercel/blob";
+import { randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -10,6 +11,7 @@ export async function POST(request) {
   const file = formData.get("file");
   if (!file) return Response.json({ error: "Fichier manquant" }, { status: 400 });
 
-  const blob = await put(file.name, file, { access: "public", allowOverwrite: true });
+  const uniqueName = `lmnp/${randomUUID()}-${file.name}`;
+  const blob = await put(uniqueName, file, { access: "public", allowOverwrite: true });
   return Response.json({ url: blob.url, filename: file.name });
 }

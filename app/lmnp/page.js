@@ -137,8 +137,6 @@ export default function LmnpPage() {
   // Ventilation expand state
   const [expandedVentRows, setExpandedVentRows] = useState(new Set());
 
-  // PDF loading state
-  const [pdfLoading, setPdfLoading] = useState(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/crypto/login");
@@ -242,23 +240,8 @@ export default function LmnpPage() {
     setFactures(prev => prev.filter(f => f.id !== id));
   }
 
-  async function openPdf(url_pdf, id) {
-    setPdfLoading(id);
-    // Ouvrir l'onglet immédiatement (contexte click) pour éviter le popup blocker
-    const newTab = window.open("", "_blank");
-    try {
-      const res = await fetch(`/api/lmnp/blob-url?url=${encodeURIComponent(url_pdf)}`);
-      const data = await res.json();
-      if (data.signedUrl && newTab) {
-        newTab.location.href = data.signedUrl;
-      } else {
-        newTab?.close();
-      }
-    } catch {
-      newTab?.close();
-    } finally {
-      setPdfLoading(null);
-    }
+  function openPdf(url_pdf) {
+    window.open(url_pdf, "_blank");
   }
 
   function openEdit(f) {
@@ -557,15 +540,10 @@ export default function LmnpPage() {
                         <div className="flex-1 min-w-0">
                           {f.url_pdf ? (
                             <button
-                              onClick={() => openPdf(f.url_pdf, f.id)}
-                              disabled={pdfLoading === f.id}
-                              className="text-white font-medium truncate block max-w-full text-left hover:underline hover:text-[#C9A84C] transition-colors disabled:cursor-wait"
+                              onClick={() => openPdf(f.url_pdf)}
+                              className="text-white font-medium truncate block max-w-full text-left hover:underline hover:text-[#C9A84C] transition-colors"
                             >
-                              {pdfLoading === f.id ? (
-                                <span className="flex items-center gap-1.5">
-                                  <Spinner />{f.filename}
-                                </span>
-                              ) : f.filename}
+                              {f.filename}
                             </button>
                           ) : (
                             <p className="text-white font-medium truncate">{f.filename}</p>

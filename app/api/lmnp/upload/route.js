@@ -10,6 +10,6 @@ export async function POST(request) {
   const file = formData.get("file");
   if (!file) return Response.json({ error: "Fichier manquant" }, { status: 400 });
 
-  const blob = await put(file.name, file, { access: "private", allowOverwrite: true });
+  const blob = await put(file.name, file, { access: "public", allowOverwrite: true });
   return Response.json({ url: blob.url, filename: file.name });
 }

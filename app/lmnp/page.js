@@ -1037,6 +1037,26 @@ export default function LmnpPage() {
             {activeTab === "dashboard" && (
               <div className="space-y-5">
 
+                {/* Sélecteur d'année */}
+                <div className="flex gap-2">
+                  {[2024, 2025, 2026].map(y => (
+                    <button
+                      key={y}
+                      onClick={() => { setAnnee(y); setSelectedIds(new Set()); }}
+                      className={`px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                        annee === y
+                          ? "bg-[#C9A84C] text-black"
+                          : "border border-[#2a4a4d] text-zinc-400 hover:border-[#C9A84C]/50"
+                      }`}
+                    >
+                      {y}
+                      <span className={`ml-1.5 text-xs font-normal ${annee === y ? "text-black/60" : "text-zinc-600"}`}>
+                        ({yearCounts[y] || 0})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
                 {/* Bien immobilier */}
                 <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
                   <h3 className="text-lg font-bold text-white">Bien immobilier</h3>
@@ -1356,7 +1376,7 @@ export default function LmnpPage() {
               <div>
                 <label className="text-xs text-zinc-400 mb-1 block">Loyer annuel (€)</label>
                 <input
-                  type="number" placeholder="12000" value={loyerAnnuel}
+                  type="number" placeholder="0" value={loyerAnnuel}
                   onChange={e => setLoyerAnnuel(e.target.value)}
                   className={inputClass}
                 />

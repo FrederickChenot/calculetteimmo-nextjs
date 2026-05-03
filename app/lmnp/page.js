@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const CAT_COLORS = {
@@ -334,6 +334,17 @@ export default function LmnpPage() {
   return (
     <main className="min-h-screen bg-[#0a1628]">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
+
+        {/* Barre utilisateur */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-zinc-400">{session.user?.email}</p>
+          <button
+            onClick={() => signOut({ callbackUrl: "/crypto/login" })}
+            className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors"
+          >
+            Se déconnecter
+          </button>
+        </div>
 
         {/* Hero */}
         <div className="text-center space-y-3">

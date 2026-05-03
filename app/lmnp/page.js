@@ -240,10 +240,6 @@ export default function LmnpPage() {
     setFactures(prev => prev.filter(f => f.id !== id));
   }
 
-  function openPdf(url_pdf) {
-    window.open(url_pdf, "_blank");
-  }
-
   function openEdit(f) {
     setEditingFacture(f);
     setEditForm({
@@ -539,12 +535,12 @@ export default function LmnpPage() {
                       >
                         <div className="flex-1 min-w-0">
                           {f.url_pdf ? (
-                            <button
-                              onClick={() => openPdf(f.url_pdf)}
-                              className="text-white font-medium truncate block max-w-full text-left hover:underline hover:text-[#C9A84C] transition-colors"
+                            <span
+                              onClick={() => window.open(f.url_pdf, "_blank")}
+                              className="text-white font-medium truncate block cursor-pointer hover:underline hover:text-[#C9A84C] transition-colors"
                             >
                               {f.filename}
-                            </button>
+                            </span>
                           ) : (
                             <p className="text-white font-medium truncate">{f.filename}</p>
                           )}

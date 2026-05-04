@@ -44,6 +44,9 @@ export async function GET() {
     )
   `;
   await sqlLmnp`
+    ALTER TABLE lmnp_bien ADD COLUMN IF NOT EXISTS date_mise_en_location DATE
+  `;
+  await sqlLmnp`
     CREATE TABLE IF NOT EXISTS lmnp_charges_recurrentes (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -57,6 +60,9 @@ export async function GET() {
       autres_libelle TEXT,
       updated_at TIMESTAMP DEFAULT NOW()
     )
+  `;
+  await sqlLmnp`
+    ALTER TABLE lmnp_charges_recurrentes ADD COLUMN IF NOT EXISTS loyer_annuel NUMERIC(10,2) DEFAULT 0
   `;
   return Response.json({ ok: true });
 }

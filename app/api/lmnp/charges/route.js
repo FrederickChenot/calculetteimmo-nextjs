@@ -21,7 +21,7 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { annee, taxe_fonciere, assurance_pno, cfe, frais_comptabilite, interets_emprunt, autres, autres_libelle } = await request.json();
+  const { annee, loyer_annuel, taxe_fonciere, assurance_pno, cfe, frais_comptabilite, interets_emprunt, autres, autres_libelle } = await request.json();
 
   const existing = await sqlLmnp`
     SELECT id FROM lmnp_charges_recurrentes
@@ -32,8 +32,9 @@ export async function POST(request) {
   if (existing.length > 0) {
     await sqlLmnp`
       UPDATE lmnp_charges_recurrentes
-      SET taxe_fonciere = ${taxe_fonciere}, assurance_pno = ${assurance_pno},
-          cfe = ${cfe}, frais_comptabilite = ${frais_comptabilite},
+      SET loyer_annuel = ${loyer_annuel}, taxe_fonciere = ${taxe_fonciere},
+          assurance_pno = ${assurance_pno}, cfe = ${cfe},
+          frais_comptabilite = ${frais_comptabilite},
           interets_emprunt = ${interets_emprunt}, autres = ${autres},
           autres_libelle = ${autres_libelle || null}, updated_at = NOW()
       WHERE user_id = ${session.userId} AND annee = ${annee}
@@ -41,9 +42,9 @@ export async function POST(request) {
   } else {
     await sqlLmnp`
       INSERT INTO lmnp_charges_recurrentes
-        (user_id, annee, taxe_fonciere, assurance_pno, cfe, frais_comptabilite, interets_emprunt, autres, autres_libelle)
+        (user_id, annee, loyer_annuel, taxe_fonciere, assurance_pno, cfe, frais_comptabilite, interets_emprunt, autres, autres_libelle)
       VALUES
-        (${session.userId}, ${annee}, ${taxe_fonciere}, ${assurance_pno}, ${cfe},
+        (${session.userId}, ${annee}, ${loyer_annuel}, ${taxe_fonciere}, ${assurance_pno}, ${cfe},
          ${frais_comptabilite}, ${interets_emprunt}, ${autres}, ${autres_libelle || null})
     `;
   }

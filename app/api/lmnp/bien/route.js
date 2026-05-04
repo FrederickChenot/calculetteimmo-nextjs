@@ -16,7 +16,7 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { valeur_venale, quote_part_terrain, duree_amort, date_debut } = await request.json();
+  const { valeur_venale, quote_part_terrain, duree_amort, date_debut, date_mise_en_location } = await request.json();
 
   const existing = await sqlLmnp`
     SELECT id FROM lmnp_bien WHERE user_id = ${session.userId} LIMIT 1
@@ -27,13 +27,14 @@ export async function POST(request) {
       UPDATE lmnp_bien
       SET valeur_venale = ${valeur_venale}, quote_part_terrain = ${quote_part_terrain},
           duree_amort = ${duree_amort}, date_debut = ${date_debut || null},
+          date_mise_en_location = ${date_mise_en_location || null},
           updated_at = NOW()
       WHERE user_id = ${session.userId}
     `;
   } else {
     await sqlLmnp`
-      INSERT INTO lmnp_bien (user_id, valeur_venale, quote_part_terrain, duree_amort, date_debut)
-      VALUES (${session.userId}, ${valeur_venale}, ${quote_part_terrain}, ${duree_amort}, ${date_debut || null})
+      INSERT INTO lmnp_bien (user_id, valeur_venale, quote_part_terrain, duree_amort, date_debut, date_mise_en_location)
+      VALUES (${session.userId}, ${valeur_venale}, ${quote_part_terrain}, ${duree_amort}, ${date_debut || null}, ${date_mise_en_location || null})
     `;
   }
   return Response.json({ ok: true });

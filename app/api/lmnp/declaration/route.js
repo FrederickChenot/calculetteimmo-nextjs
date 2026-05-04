@@ -29,12 +29,16 @@ export async function GET(request) {
   const bien = bienRows[0] || null;
   const charges = chargesRows[0] || null;
 
-  // Calcul amortissement bien
+  // Amortissement bien — ne démarre qu'à la date de mise en location
   const valeurVenale = parseFloat(bien?.valeur_venale) || 0;
   const quotePart = parseFloat(bien?.quote_part_terrain) || 15;
   const dureeAmortBien = parseInt(bien?.duree_amort) || 30;
   const baseAmortissable = valeurVenale * (1 - quotePart / 100);
-  const amortBienAnnuel = dureeAmortBien > 0 ? baseAmortissable / dureeAmortBien : 0;
+  const amortBienBrut = dureeAmortBien > 0 ? baseAmortissable / dureeAmortBien : 0;
+
+  const miseDateStr = bien?.date_mise_en_location;
+  const miseEnLocationAnnee = miseDateStr ? parseInt(String(miseDateStr).slice(0, 4)) : null;
+  const amortBienAnnuel = (miseEnLocationAnnee && miseEnLocationAnnee > annee) ? 0 : amortBienBrut;
 
   // Charges récurrentes totales
   const totalChargesRec = charges
@@ -59,12 +63,19 @@ export async function GET(request) {
     return s + (parseFloat(f.montant_ht) || 0) / parseFloat(f.duree_amort);
   }, 0);
 
-  // Cases 2031
   const chargesExternes = deductibleHt + totalChargesRec;
-  const amortissements = amortAnnuel + amortBienAnnuel;
-  const resultat = 0 - chargesExternes - amortissements; // DA = 0 si pas de loyer
+  const amortTotal = amortAnnuel + amortBienAnnuel;
 
-  // Tableau 2033-C
+  // Règle art. 39C CGI
+  const DA = parseFloat(charges?.loyer_annuel) || 0;
+  const resultatAvantAmort = DA - chargesExternes;
+  const amortDeductibles = resultatAvantAmort >= 0
+    ? Math.min(amortTotal, resultatAvantAmort)
+    : 0;
+  const amortDifferes = amortTotal - amortDeductibles;
+  const resultatFiscal = resultatAvantAmort - amortDeductibles;
+
+  // Tableau 2033-C (toutes dotations, y compris différées)
   const tableau2033C = [];
 
   if (valeurVenale > 0) {
@@ -76,6 +87,7 @@ export async function GET(request) {
       cumul: amortBienAnnuel,
       vnc: valeurVenale - amortBienAnnuel,
       isBien: true,
+      differe: miseEnLocationAnnee && miseEnLocationAnnee > annee,
     });
   }
 
@@ -98,17 +110,24 @@ export async function GET(request) {
   return Response.json({
     annee,
     cases2031: {
-      DA: 0,
+      DA,
       case10: chargesExternes,
-      case14: amortissements,
-      caseGG: Math.abs(resultat),
-      isDeficit: resultat < 0,
+      case14: amortDeductibles,
+      caseGG: Math.abs(resultatFiscal),
+      isDeficit: resultatFiscal < 0,
+      amortDifferes,
     },
     cases2033B: {
-      produits: 0,
+      produits: DA,
       chargesDeductibles: chargesExternes,
-      dotationsAmort: amortissements,
-      resultatNet: resultat,
+      dotationsAmort: amortTotal,
+      resultatNet: resultatFiscal,
+    },
+    regle39C: {
+      resultatAvantAmort,
+      amortDeductibles,
+      amortDifferes,
+      resultatFiscal,
     },
     tableau2033C,
     totalAmort,
@@ -117,6 +136,8 @@ export async function GET(request) {
       totalChargesRec,
       amortAnnuel,
       amortBienAnnuel,
+      amortBienBrut,
+      miseEnLocationAnnee,
     },
   });
 }

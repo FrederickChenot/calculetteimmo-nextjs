@@ -148,10 +148,10 @@ export default function LmnpPage() {
   const [bulkForm, setBulkForm] = useState({ categorie: "divers", traitement: "deductible", duree_amort: "" });
 
   // Bien immobilier
-  const [bien, setBien] = useState({ valeur_venale: "", quote_part_terrain: 15, duree_amort: 30, date_debut: "2025-05-19" });
+  const [bien, setBien] = useState({ valeur_venale: "", quote_part_terrain: 15, duree_amort: 30, date_debut: "2025-05-19", date_mise_en_location: "" });
 
   // Charges récurrentes
-  const [charges, setCharges] = useState({ taxe_fonciere: "", assurance_pno: "", cfe: "", frais_comptabilite: "", interets_emprunt: "", autres: "", autres_libelle: "" });
+  const [charges, setCharges] = useState({ loyer_annuel: "", taxe_fonciere: "", assurance_pno: "", cfe: "", frais_comptabilite: "", interets_emprunt: "", autres: "", autres_libelle: "" });
 
   // Simulation avancée
   const [deficitReporte, setDeficitReporte] = useState("");
@@ -236,6 +236,7 @@ export default function LmnpPage() {
       quote_part_terrain: data.bien.quote_part_terrain ?? 15,
       duree_amort: data.bien.duree_amort ?? 30,
       date_debut: data.bien.date_debut ? data.bien.date_debut.slice(0, 10) : "",
+      date_mise_en_location: data.bien.date_mise_en_location ? data.bien.date_mise_en_location.slice(0, 10) : "",
     });
   }
 
@@ -243,6 +244,7 @@ export default function LmnpPage() {
     const res = await fetch(`/api/lmnp/charges?annee=${annee}`);
     const data = await res.json();
     if (data.charges) setCharges({
+      loyer_annuel: data.charges.loyer_annuel || "",
       taxe_fonciere: data.charges.taxe_fonciere || "",
       assurance_pno: data.charges.assurance_pno || "",
       cfe: data.charges.cfe || "",
@@ -262,6 +264,7 @@ export default function LmnpPage() {
         quote_part_terrain: parseFloat(bien.quote_part_terrain) || 15,
         duree_amort: parseInt(bien.duree_amort) || 30,
         date_debut: bien.date_debut || null,
+        date_mise_en_location: bien.date_mise_en_location || null,
       }),
     });
   }
@@ -272,6 +275,7 @@ export default function LmnpPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         annee,
+        loyer_annuel: parseFloat(charges.loyer_annuel) || 0,
         taxe_fonciere: parseFloat(charges.taxe_fonciere) || 0,
         assurance_pno: parseFloat(charges.assurance_pno) || 0,
         cfe: parseFloat(charges.cfe) || 0,
@@ -483,6 +487,7 @@ export default function LmnpPage() {
     lines.push(`Case 10 — Charges externes;${d.cases2031.case10.toFixed(2)}`);
     lines.push(`Case 14 — Amortissements;${d.cases2031.case14.toFixed(2)}`);
     lines.push(`Case GG — Résultat ${d.cases2031.isDeficit ? "déficit" : "bénéfice"};${d.cases2031.caseGG.toFixed(2)}`);
+    lines.push(`Amortissements différés (hors bilan fiscal);${d.cases2031.amortDifferes.toFixed(2)}`);
     lines.push("");
     lines.push("=== TABLEAU AMORTISSEMENTS 2033-C ===");
     lines.push("Désignation;Valeur (€);Durée (ans);Amort/an (€);Cumul (€);VNC (€)");
@@ -561,6 +566,11 @@ export default function LmnpPage() {
   const baseAmortissable = valeurVenale * (1 - quotePart / 100);
   const amortBienAnnuel = dureeAmortBien > 0 ? baseAmortissable / dureeAmortBien : 0;
 
+  // Amortissement bien effectif — ne démarre qu'à la date de mise en location
+  const miseEnLocationStr = bien.date_mise_en_location;
+  const miseEnLocationAnnee = miseEnLocationStr ? parseInt(miseEnLocationStr.slice(0, 4)) : null;
+  const amortBienEffectif = (miseEnLocationAnnee && miseEnLocationAnnee > annee) ? 0 : amortBienAnnuel;
+
   // Charges récurrentes totales
   const totalChargesRec = [
     parseFloat(charges.taxe_fonciere) || 0,
@@ -571,14 +581,19 @@ export default function LmnpPage() {
     parseFloat(charges.autres) || 0,
   ].reduce((a, b) => a + b, 0);
 
-  const totalAmortAll = amortAnnuel + amortBienAnnuel;
+  const totalAmortAll = amortAnnuel + amortBienEffectif;
   const totalDeductibleAll = deductibleHt + totalChargesRec;
 
-  // Simulation fiscale
+  // Simulation fiscale — règle art. 39C CGI (plafonnement amortissements)
   const loyer = parseFloat(loyerAnnuel) || 0;
   const deficitN1 = parseFloat(deficitReporte) || 0;
-  const resultatFiscalBrut = loyer - totalDeductibleAll - totalAmortAll;
-  const resultatFiscalNet = resultatFiscalBrut - deficitN1;
+  const resultatAvantAmort = loyer - totalDeductibleAll;
+  const amortDeductibles = resultatAvantAmort >= 0
+    ? Math.min(totalAmortAll, resultatAvantAmort)
+    : 0;
+  const amortDifferes = totalAmortAll - amortDeductibles;
+  const resultatFiscal = resultatAvantAmort - amortDeductibles;
+  const resultatFiscalNet = resultatFiscal > 0 ? Math.max(0, resultatFiscal - deficitN1) : resultatFiscal;
 
   const tmiPct = parseFloat(tmi) || 0;
   const imposable = Math.max(0, resultatFiscalNet);
@@ -1162,7 +1177,7 @@ export default function LmnpPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-zinc-400 mb-1 block">Date début location</label>
+                      <label className="text-xs text-zinc-400 mb-1 block">Date début activité LMNP</label>
                       <input
                         type="date" value={bien.date_debut}
                         onChange={e => setBien(b => ({ ...b, date_debut: e.target.value }))}
@@ -1170,10 +1185,30 @@ export default function LmnpPage() {
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1 block">Date de mise en location effective</label>
+                      <input
+                        type="date" value={bien.date_mise_en_location}
+                        placeholder="ex: 01/07/2026"
+                        onChange={e => setBien(b => ({ ...b, date_mise_en_location: e.target.value }))}
+                        className={inputClass}
+                      />
+                      <p className="text-xs text-zinc-600 mt-1">
+                        L&apos;amortissement du bien commence à la première mise en location, pas à l&apos;immatriculation LMNP
+                      </p>
+                    </div>
+                  </div>
                   {valeurVenale > 0 && (
                     <div className="bg-[#0d1f21] rounded-xl p-3 flex flex-wrap gap-6 text-sm">
                       <span className="text-zinc-400">Base amortissable : <span className="text-white font-semibold">{fmt(baseAmortissable)} €</span></span>
-                      <span className="text-zinc-400">Amortissement annuel : <span className="text-orange-400 font-semibold">{fmt(amortBienAnnuel)} €/an</span></span>
+                      {miseEnLocationAnnee && miseEnLocationAnnee > annee ? (
+                        <span className="text-zinc-500">
+                          Amortissement bien : <span className="text-zinc-400 font-semibold">0 € (démarrage en {miseEnLocationAnnee})</span>
+                        </span>
+                      ) : (
+                        <span className="text-zinc-400">Amortissement annuel : <span className="text-orange-400 font-semibold">{fmt(amortBienAnnuel)} €/an</span></span>
+                      )}
                     </div>
                   )}
                   <button
@@ -1187,6 +1222,15 @@ export default function LmnpPage() {
                 {/* Charges récurrentes */}
                 <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
                   <h3 className="text-lg font-bold text-white">Charges récurrentes — {annee}</h3>
+                  <div>
+                    <label className="text-xs text-zinc-400 mb-1 block">Loyers annuels perçus (€) — utilisé pour la déclaration 2031 Case DA</label>
+                    <input
+                      type="number" value={charges.loyer_annuel} placeholder="0"
+                      onChange={e => setCharges(c => ({ ...c, loyer_annuel: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="h-px bg-[#2a4a4d]" />
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
                       ["taxe_fonciere", "Taxe foncière"],
@@ -1246,6 +1290,16 @@ export default function LmnpPage() {
                       <p className={`text-xl font-bold ${cls}`}>{val}</p>
                     </div>
                   ))}
+                </div>
+
+                <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+                  <span className="text-amber-400 text-xl flex-shrink-0 mt-0.5">⚠️</span>
+                  <p className="text-sm text-zinc-400">
+                    <span className="text-amber-400 font-semibold">Règle fiscale LMNP (art. 39C CGI) : </span>
+                    Les amortissements ne peuvent pas créer ou aggraver un déficit fiscal.
+                    Ils sont automatiquement différés et reportés sur vos futurs bénéfices LMNP,
+                    sans limite de temps mais dans la limite de 10 ans pour les déficits de charges.
+                  </p>
                 </div>
 
                 <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6">
@@ -1363,7 +1417,7 @@ export default function LmnpPage() {
                       <button
                         onClick={() => {
                           const d = declarationData.cases2031;
-                          const txt = `Case DA : ${d.DA.toFixed(2)} €\nCase 10 : ${d.case10.toFixed(2)} €\nCase 14 : ${d.case14.toFixed(2)} €\nCase GG : ${d.caseGG.toFixed(2)} €`;
+                          const txt = `Case DA : ${d.DA.toFixed(2)} €\nCase 10 : ${d.case10.toFixed(2)} €\nCase 14 : ${d.case14.toFixed(2)} €\nCase GG : ${d.caseGG.toFixed(2)} €\nAmort. différés (hors bilan) : ${d.amortDifferes.toFixed(2)} €`;
                           navigator.clipboard.writeText(txt).then(() => {
                             setCopyConfirm(true);
                             setTimeout(() => setCopyConfirm(false), 2000);
@@ -1399,6 +1453,15 @@ export default function LmnpPage() {
                               <span className={`font-semibold text-sm ${cls}`}>{fmt(val)} €</span>
                             </div>
                           ))}
+                          {declarationData.cases2031.amortDifferes > 0 && (
+                            <div className="flex justify-between items-start px-4 py-3 bg-zinc-800/30">
+                              <div>
+                                <span className="text-zinc-500 text-sm">Amortissements différés (hors bilan fiscal)</span>
+                                <p className="text-xs text-zinc-600">à reporter sur 2033-C — reportables sur bénéfices LMNP futurs</p>
+                              </div>
+                              <span className="font-semibold text-sm text-zinc-400 flex-shrink-0 ml-3">{fmt(declarationData.cases2031.amortDifferes)} €</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1725,6 +1788,8 @@ export default function LmnpPage() {
             </div>
 
             <div className="bg-[#0d1f21] rounded-xl p-4 space-y-2.5 text-sm">
+
+              {/* Loyers */}
               <div className="flex justify-between">
                 <span className="text-zinc-400">Loyer annuel</span>
                 <span className="font-semibold text-white">{fmt(loyer)} €</span>
@@ -1732,6 +1797,7 @@ export default function LmnpPage() {
 
               <div className="h-px bg-[#2a4a4d]" />
 
+              {/* Charges */}
               <div className="flex justify-between">
                 <span className="text-zinc-400">Charges déductibles factures</span>
                 <span className="font-semibold text-emerald-400">−{fmt(deductibleHt)} €</span>
@@ -1745,70 +1811,112 @@ export default function LmnpPage() {
 
               <div className="h-px bg-[#2a4a4d]" />
 
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Amortissements mobilier / travaux</span>
-                <span className="font-semibold text-orange-400">−{fmt(amortAnnuel)} €</span>
+              {/* Résultat avant amortissements */}
+              <div className="flex justify-between font-semibold">
+                <span className="text-zinc-300">Résultat avant amortissements</span>
+                <span className={resultatAvantAmort >= 0 ? "text-amber-400" : "text-emerald-400"}>
+                  {resultatAvantAmort < 0 ? "−" : ""}{fmt(Math.abs(resultatAvantAmort))} €
+                </span>
               </div>
-              {amortDetails.length > 0 && (
+
+              <div className="h-px bg-[#2a4a4d]" />
+
+              {/* Amortissements — règle 39C */}
+              <div className="flex justify-between">
+                <div>
+                  <span className="text-zinc-400">Amortissements déduits</span>
+                  <p className="text-xs text-zinc-600">plafonnés au résultat positif (art. 39C CGI)</p>
+                </div>
+                <span className="font-semibold text-orange-400">−{fmt(amortDeductibles)} €</span>
+              </div>
+
+              {amortDeductibles > 0 && (
                 <div className="ml-3 space-y-1">
                   {amortDetails.map((d, i) => (
                     <div key={i} className="flex justify-between text-xs text-zinc-500">
                       <span className="truncate mr-2">{d.label}</span>
-                      <span className="flex-shrink-0">{fmt(d.annuite)} €/an ({fmt(d.montantHt)} € / {d.dureeAmort} ans)</span>
+                      <span className="flex-shrink-0">{fmt(d.annuite)} €/an</span>
                     </div>
                   ))}
+                  {amortBienEffectif > 0 && (
+                    <div className="flex justify-between text-xs text-zinc-500">
+                      <span className="truncate mr-2">Bien immobilier</span>
+                      <span className="flex-shrink-0">{fmt(amortBienEffectif)} €/an</span>
+                    </div>
+                  )}
                 </div>
               )}
-              {amortBienAnnuel > 0 && (
+
+              {amortDifferes > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Amortissement bien immobilier</span>
-                  <span className="font-semibold text-orange-400">−{fmt(amortBienAnnuel)} €/an</span>
+                  <div>
+                    <span className="text-zinc-400">Amortissements différés</span>
+                    <p className="text-xs text-zinc-600">reportés sur bénéfices LMNP futurs</p>
+                  </div>
+                  <span className="font-semibold text-zinc-500">{fmt(amortDifferes)} €</span>
                 </div>
               )}
 
               <div className="h-px bg-[#2a4a4d]" />
 
-              <div className="flex justify-between font-semibold">
-                <span className="text-zinc-300">Résultat brut</span>
-                <span className={resultatFiscalBrut >= 0 ? "text-amber-400" : "text-emerald-400"}>
-                  {resultatFiscalBrut < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscalBrut))} €
+              {/* Résultat fiscal */}
+              <div className="flex justify-between items-center">
+                <span className="text-white font-bold">Résultat fiscal</span>
+                <span className={`text-xl font-bold ${resultatFiscal >= 0 ? "text-[#C9A84C]" : "text-emerald-400"}`}>
+                  {resultatFiscal < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscal))} €
                 </span>
               </div>
 
-              {deficitN1 > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Déficit reporté N-1</span>
-                  <span className="font-semibold text-emerald-400">−{fmt(deficitN1)} €</span>
+              {resultatFiscal < 0 && (
+                <div className="bg-emerald-500/10 ring-1 ring-emerald-500/20 rounded-lg p-3 space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400">Déficit fiscal (charges)</span>
+                    <span className="text-emerald-400">{fmt(Math.abs(resultatFiscal))} €</span>
+                  </div>
+                  {amortDifferes > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-400">Amortissements en réserve</span>
+                      <span className="text-orange-400">{fmt(amortDifferes)} €</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-zinc-500 italic">
+                    ⚠️ Déficits reportables uniquement sur bénéfices LMNP futurs, dans la limite de 10 ans (art. 156 I-2° CGI). Ne s&apos;impute pas sur le revenu global.
+                  </p>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-white font-bold">Résultat fiscal net</span>
-                <span className={`text-xl font-bold ${resultatFiscalNet >= 0 ? "text-[#C9A84C]" : "text-emerald-400"}`}>
-                  {resultatFiscalNet < 0 ? "−" : ""}{fmt(Math.abs(resultatFiscalNet))} €
-                </span>
-              </div>
-              <p className={`text-xs font-medium ${resultatFiscalNet >= 0 ? "text-amber-400" : "text-emerald-400"}`}>
-                {resultatFiscalNet >= 0
-                  ? "Bénéfice imposable — formulaire 2031"
-                  : `Déficit de ${fmt(Math.abs(resultatFiscalNet))} € — reportable sur les années suivantes`}
-              </p>
-
-              {resultatFiscalNet > 0 && tmiPct > 0 && (
+              {resultatFiscal >= 0 && (
                 <>
-                  <div className="h-px bg-[#2a4a4d]" />
-                  <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400">Impôt TMI ({tmiPct}%)</span>
-                    <span className="text-[#C9A84C]">{fmt(impotTMI)} €</span>
+                  {deficitN1 > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Déficit reporté N-1</span>
+                      <span className="font-semibold text-emerald-400">−{fmt(deficitN1)} €</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-semibold">Résultat imposable net</span>
+                    <span className="text-xl font-bold text-[#C9A84C]">{fmt(Math.max(0, resultatFiscalNet))} €</span>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400">Prélèvements sociaux (17,2%)</span>
-                    <span className="text-[#C9A84C]">{fmt(prelevement)} €</span>
-                  </div>
-                  <div className="flex justify-between font-bold">
-                    <span className="text-white">Total impôt estimé</span>
-                    <span className="text-[#C9A84C]">{fmt(totalImpot)} €</span>
-                  </div>
+                  {Math.max(0, resultatFiscalNet) === 0 && deficitN1 > 0 && (
+                    <p className="text-xs text-emerald-400">Déficit N-1 absorbe le bénéfice</p>
+                  )}
+                  {tmiPct > 0 && imposable > 0 && (
+                    <>
+                      <div className="h-px bg-[#2a4a4d]" />
+                      <div className="flex justify-between text-xs">
+                        <span className="text-zinc-400">Impôt TMI ({tmiPct}%)</span>
+                        <span className="text-[#C9A84C]">{fmt(impotTMI)} €</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-zinc-400">Prélèvements sociaux (17,2%)</span>
+                        <span className="text-[#C9A84C]">{fmt(prelevement)} €</span>
+                      </div>
+                      <div className="flex justify-between font-bold">
+                        <span className="text-white">Total impôt estimé</span>
+                        <span className="text-[#C9A84C]">{fmt(totalImpot)} €</span>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>

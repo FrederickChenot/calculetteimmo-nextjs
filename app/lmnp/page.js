@@ -160,6 +160,13 @@ export default function LmnpPage() {
   // Recherche factures
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Déclaration
+  const [declarationAnnee, setDeclarationAnnee] = useState(2025);
+  const [declarationData, setDeclarationData] = useState(null);
+  const [declarationLoading, setDeclarationLoading] = useState(false);
+  const [checklist, setChecklist] = useState([false, false, false, false, false]);
+  const [copyConfirm, setCopyConfirm] = useState(false);
+
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/crypto/login");
@@ -186,6 +193,19 @@ export default function LmnpPage() {
     if (session) fetchCharges();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, annee]);
+
+  useEffect(() => {
+    if (session && activeTab === "declaration") fetchDeclaration(declarationAnnee);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, activeTab, declarationAnnee]);
+
+  async function fetchDeclaration(yr) {
+    setDeclarationLoading(true);
+    const res = await fetch(`/api/lmnp/declaration?annee=${yr}`);
+    const data = await res.json();
+    setDeclarationData(data);
+    setDeclarationLoading(false);
+  }
 
   async function fetchFactures() {
     setFacturesLoading(true);
@@ -423,6 +443,61 @@ export default function LmnpPage() {
       await fetchFactures();
       setEditingFacture(null);
     }
+  }
+
+  function downloadCsv(content, filename) {
+    const blob = new Blob(["﻿" + content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function export2033C() {
+    if (!declarationData) return;
+    const rows = [
+      ["Désignation", "Valeur (€)", "Durée (ans)", "Amort/an (€)", "Cumul (€)", "VNC (€)"],
+      ...declarationData.tableau2033C.map(r => [
+        r.designation,
+        r.valeur.toFixed(2),
+        r.duree,
+        r.amortAn.toFixed(2),
+        r.cumul.toFixed(2),
+        r.vnc.toFixed(2),
+      ]),
+      ["TOTAL", "", "", declarationData.totalAmort.toFixed(2), "", ""],
+    ];
+    downloadCsv(rows.map(r => r.join(";")).join("\n"), `lmnp_2033C_${declarationAnnee}.csv`);
+  }
+
+  function exportDossierComplet() {
+    if (!declarationData) return;
+    const lines = [];
+    const d = declarationData;
+
+    lines.push("=== RECAPITULATIF 2031 ===");
+    lines.push(`Année;${declarationAnnee}`);
+    lines.push(`Case DA — Recettes brutes;${d.cases2031.DA.toFixed(2)}`);
+    lines.push(`Case 10 — Charges externes;${d.cases2031.case10.toFixed(2)}`);
+    lines.push(`Case 14 — Amortissements;${d.cases2031.case14.toFixed(2)}`);
+    lines.push(`Case GG — Résultat ${d.cases2031.isDeficit ? "déficit" : "bénéfice"};${d.cases2031.caseGG.toFixed(2)}`);
+    lines.push("");
+    lines.push("=== TABLEAU AMORTISSEMENTS 2033-C ===");
+    lines.push("Désignation;Valeur (€);Durée (ans);Amort/an (€);Cumul (€);VNC (€)");
+    d.tableau2033C.forEach(r => {
+      lines.push(`${r.designation};${r.valeur.toFixed(2)};${r.duree};${r.amortAn.toFixed(2)};${r.cumul.toFixed(2)};${r.vnc.toFixed(2)}`);
+    });
+    lines.push(`TOTAL;;;${d.totalAmort.toFixed(2)};;`);
+    lines.push("");
+    lines.push("=== DETAIL CHARGES ===");
+    lines.push(`Factures déductibles HT;${d.detail.deductibleHt.toFixed(2)}`);
+    lines.push(`Charges récurrentes;${d.detail.totalChargesRec.toFixed(2)}`);
+    lines.push(`Amortissements factures;${d.detail.amortAnnuel.toFixed(2)}`);
+    lines.push(`Amortissement bien;${d.detail.amortBienAnnuel.toFixed(2)}`);
+
+    downloadCsv(lines.join("\n"), `lmnp_dossier_comptable_${declarationAnnee}.csv`);
   }
 
   async function exportCSV() {
@@ -704,6 +779,7 @@ export default function LmnpPage() {
                 { key: "factures", label: "Mes factures" },
                 { key: "ventilation", label: "Ventilation" },
                 { key: "dashboard", label: "Tableau de bord" },
+                { key: "declaration", label: "Déclaration 2031" },
               ].map(t => (
                 <button
                   key={t.key}
@@ -1215,6 +1291,255 @@ export default function LmnpPage() {
                       className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
                     >
                       Simulation fiscale
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* ── Déclaration 2031 ── */}
+            {activeTab === "declaration" && (
+              <div className="space-y-6">
+
+                {/* Sélecteur d'année */}
+                <div className="flex gap-2">
+                  {[2025, 2026].map(y => (
+                    <button
+                      key={y}
+                      onClick={() => setDeclarationAnnee(y)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                        declarationAnnee === y
+                          ? "bg-[#C9A84C] text-black"
+                          : "border border-[#2a4a4d] text-zinc-400 hover:border-[#C9A84C]/50"
+                      }`}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Section 1 : Checklist */}
+                <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-lg font-bold text-white">Checklist avant déclaration {declarationAnnee}</h3>
+                  <div className="space-y-3">
+                    {[
+                      "Toutes mes factures sont uploadées et classifiées",
+                      "Les charges récurrentes sont saisies",
+                      "La valeur vénale du bien immobilier est renseignée",
+                      "J'ai vérifié la ventilation facture par facture",
+                      "J'ai le numéro SIRET (833 889 918 00029)",
+                    ].map((item, i) => (
+                      <label key={i} className="flex items-center gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={checklist[i]}
+                          onChange={() => setChecklist(prev => prev.map((v, j) => j === i ? !v : v))}
+                          className="h-4 w-4 accent-[#C9A84C] cursor-pointer flex-shrink-0"
+                        />
+                        <span className={`text-sm transition-colors ${checklist[i] ? "text-zinc-500 line-through" : "text-zinc-300"}`}>
+                          {item}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs text-zinc-400">
+                      <span>{checklist.filter(Boolean).length}/5 complété</span>
+                      <span>{checklist.every(Boolean) ? "✓ Prêt à déclarer" : ""}</span>
+                    </div>
+                    <div className="h-2 bg-[#0d1f21] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#C9A84C] rounded-full transition-all"
+                        style={{ width: `${(checklist.filter(Boolean).length / 5) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2 : Récapitulatif fiscal */}
+                <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <h3 className="text-lg font-bold text-white">Récapitulatif fiscal {declarationAnnee}</h3>
+                    {declarationData && (
+                      <button
+                        onClick={() => {
+                          const d = declarationData.cases2031;
+                          const txt = `Case DA : ${d.DA.toFixed(2)} €\nCase 10 : ${d.case10.toFixed(2)} €\nCase 14 : ${d.case14.toFixed(2)} €\nCase GG : ${d.caseGG.toFixed(2)} €`;
+                          navigator.clipboard.writeText(txt).then(() => {
+                            setCopyConfirm(true);
+                            setTimeout(() => setCopyConfirm(false), 2000);
+                          });
+                        }}
+                        className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                      >
+                        {copyConfirm ? "Copié !" : "Copier les valeurs"}
+                      </button>
+                    )}
+                  </div>
+
+                  {declarationLoading && <p className="text-zinc-400 text-sm">Chargement...</p>}
+
+                  {declarationData && (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Formulaire 2031-SD */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Formulaire 2031-SD</p>
+                        <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                          {[
+                            ["Case DA — Recettes brutes", declarationData.cases2031.DA, "text-white"],
+                            ["Case 10 — Charges externes", declarationData.cases2031.case10, "text-emerald-400"],
+                            ["Case 14 — Amortissements", declarationData.cases2031.case14, "text-orange-400"],
+                            [
+                              `Case GG — Résultat ${declarationData.cases2031.isDeficit ? "déficit" : "bénéfice"}`,
+                              declarationData.cases2031.caseGG,
+                              declarationData.cases2031.isDeficit ? "text-emerald-400" : "text-amber-400",
+                            ],
+                          ].map(([label, val, cls]) => (
+                            <div key={label} className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">{label}</span>
+                              <span className={`font-semibold text-sm ${cls}`}>{fmt(val)} €</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Formulaire 2033-B */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Formulaire 2033-B</p>
+                        <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                          {[
+                            ["Produits (loyers)", declarationData.cases2033B.produits, "text-white"],
+                            ["Charges déductibles", declarationData.cases2033B.chargesDeductibles, "text-emerald-400"],
+                            ["Dotations amortissements", declarationData.cases2033B.dotationsAmort, "text-orange-400"],
+                            ["Résultat net", declarationData.cases2033B.resultatNet, declarationData.cases2033B.resultatNet < 0 ? "text-emerald-400" : "text-amber-400"],
+                          ].map(([label, val, cls]) => (
+                            <div key={label} className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">{label}</span>
+                              <span className={`font-semibold text-sm ${cls}`}>{val < 0 ? "−" : ""}{fmt(Math.abs(val))} €</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 3 : Tableau 2033-C */}
+                {declarationData && (
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <h3 className="text-lg font-bold text-white">Tableau des amortissements 2033-C</h3>
+                      <button
+                        onClick={export2033C}
+                        className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                      >
+                        Exporter 2033-C en CSV
+                      </button>
+                    </div>
+                    {declarationData.tableau2033C.length === 0 ? (
+                      <p className="text-zinc-400 text-sm">Aucun élément amortissable pour {declarationAnnee}</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-[#2a4a4d]">
+                              {["Désignation", "Valeur", "Durée", "Amort/an", "Cumul", "VNC"].map(h => (
+                                <th key={h} className="text-left px-3 py-2 text-xs text-zinc-400 font-medium">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {declarationData.tableau2033C.map((r, i) => (
+                              <tr key={i} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21]">
+                                <td className="px-3 py-2.5 text-zinc-300 max-w-[180px] truncate">{r.designation}</td>
+                                <td className="px-3 py-2.5 text-white font-medium">{fmt(r.valeur)} €</td>
+                                <td className="px-3 py-2.5 text-zinc-400">{r.duree} ans</td>
+                                <td className="px-3 py-2.5 text-orange-400">{fmt(r.amortAn)} €</td>
+                                <td className="px-3 py-2.5 text-orange-400">{fmt(r.cumul)} €</td>
+                                <td className="px-3 py-2.5 text-zinc-300">{fmt(r.vnc)} €</td>
+                              </tr>
+                            ))}
+                            <tr className="border-t-2 border-[#C9A84C]/30 bg-[#0d1f21]">
+                              <td className="px-3 py-2.5 font-bold text-white" colSpan={3}>TOTAL</td>
+                              <td className="px-3 py-2.5 font-bold text-orange-400">{fmt(declarationData.totalAmort)} €</td>
+                              <td className="px-3 py-2.5 font-bold text-orange-400">{fmt(declarationData.totalAmort)} €</td>
+                              <td />
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Section 4 : Guide pas à pas */}
+                <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-lg font-bold text-white">Comment déclarer sur impots.gouv.fr</h3>
+                  <div className="space-y-3">
+                    {[
+                      {
+                        icon: "📋",
+                        title: "Créer votre espace professionnel",
+                        body: `Allez sur impots.gouv.fr → Votre espace professionnel → Créer → SIRET : 833 889 918 00029`,
+                      },
+                      {
+                        icon: "📝",
+                        title: "Déclarer la liasse 2031",
+                        body: `Déclarations → Liasse fiscale → Régime réel simplifié BIC → Date limite : 18 septembre ${declarationAnnee + 1}`,
+                      },
+                      {
+                        icon: "📊",
+                        title: "Remplir le formulaire 2031-SD",
+                        body: `Utilisez les valeurs du récapitulatif ci-dessus. Case DA = recettes, Case 10 = charges, Case 14 = amortissements, Case GG = déficit`,
+                      },
+                      {
+                        icon: "📎",
+                        title: "Joindre les annexes 2033",
+                        body: `2033-B : compte de résultat simplifié\n2033-C : tableau des amortissements\n2033-D : relevé des provisions`,
+                      },
+                      {
+                        icon: "💰",
+                        title: "Déclaration revenus 2042-C-PRO",
+                        body: `Mai ${declarationAnnee + 1} → Formulaire 2042-C-PRO → Rubrique LMNP réel → Case 5KE (déficit) ou Case 5KP (bénéfice)`,
+                      },
+                      {
+                        icon: "⚠️",
+                        title: "CFE à prévoir",
+                        body: `En ${declarationAnnee + 1} vous recevrez votre premier avis CFE (200–500 € selon commune). Déductible en LMNP ${declarationAnnee + 1}.`,
+                      },
+                    ].map((step, i) => (
+                      <div key={i} className="bg-[#0d1f21] rounded-xl p-4 flex gap-4">
+                        <span className="text-2xl flex-shrink-0">{step.icon}</span>
+                        <div>
+                          <p className="font-semibold text-white text-sm mb-1">
+                            <span className="text-zinc-500 mr-2">{i + 1}.</span>{step.title}
+                          </p>
+                          <p className="text-zinc-400 text-sm whitespace-pre-line">{step.body}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+                    <span className="text-amber-400 font-bold text-sm flex-shrink-0">Recommandé</span>
+                    <p className="text-zinc-400 text-sm">
+                      Pour votre première déclaration, <strong className="text-zinc-300">jedeclaremonmeuble.com</strong> (~150 €) ou un expert-comptable LMNP est recommandé.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Section 5 : Export comptable */}
+                {declarationData && (
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Export dossier comptable complet</h3>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Récapitulatif 2031 · Tableau 2033-C · Charges · Prêt à envoyer à un expert-comptable
+                      </p>
+                    </div>
+                    <button
+                      onClick={exportDossierComplet}
+                      className="bg-[#C9A84C] text-black font-bold px-5 py-2.5 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                    >
+                      Exporter dossier comptable complet
                     </button>
                   </div>
                 )}

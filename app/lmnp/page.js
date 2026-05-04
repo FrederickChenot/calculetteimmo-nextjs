@@ -1463,6 +1463,24 @@ export default function LmnpPage() {
                             </div>
                           )}
                         </div>
+                        {(declarationData.cases2031.isDeficit || declarationData.cases2031.amortDifferes > 0) && (
+                          <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-xl p-3 space-y-1">
+                            <p className="text-xs font-semibold text-amber-400">⚠️ Note fiscale (art. 39C CGI)</p>
+                            {declarationData.cases2031.isDeficit && (
+                              <p className="text-xs text-zinc-400">
+                                Case GG = déficit de charges uniquement : <span className="text-emerald-400 font-semibold">{fmt(declarationData.cases2031.deficitCharges)} €</span>
+                              </p>
+                            )}
+                            {declarationData.cases2031.amortDifferes > 0 && (
+                              <p className="text-xs text-zinc-400">
+                                Les amortissements (<span className="text-orange-400 font-semibold">{fmt(declarationData.cases2031.amortDifferes)} €</span>) ne créent pas de déficit fiscal — ils sont différés et reportés sur vos futurs bénéfices LMNP.
+                              </p>
+                            )}
+                            <p className="text-xs text-zinc-500">
+                              À reporter sur le formulaire 2033-C comme « amortissements différés ».
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Formulaire 2033-B */}

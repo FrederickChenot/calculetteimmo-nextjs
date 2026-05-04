@@ -113,9 +113,11 @@ export async function GET(request) {
       DA,
       case10: chargesExternes,
       case14: amortDeductibles,
-      caseGG: Math.abs(resultatFiscal),
+      // Case GG = déficit de charges uniquement (art. 39C : les amort ne créent pas de déficit)
+      caseGG: resultatFiscal < 0 ? Math.abs(resultatAvantAmort) : resultatFiscal,
       isDeficit: resultatFiscal < 0,
       amortDifferes,
+      deficitCharges: resultatAvantAmort < 0 ? Math.abs(resultatAvantAmort) : 0,
     },
     cases2033B: {
       produits: DA,

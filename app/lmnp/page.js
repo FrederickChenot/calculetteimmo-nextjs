@@ -125,6 +125,8 @@ export default function LmnpPage() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
   const addMoreRef = useRef(null);
+  const timerRef = useRef(null);
+  const warningRef = useRef(null);
 
   // Simulation state
   const [showSimulation, setShowSimulation] = useState(false);
@@ -167,6 +169,8 @@ export default function LmnpPage() {
   const [checklist, setChecklist] = useState([false, false, false, false, false, false, false]);
   const [copyConfirm, setCopyConfirm] = useState(false);
   const [copyConfirmA, setCopyConfirmA] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [copyN1Toast, setCopyN1Toast] = useState(null);
 
 
   useEffect(() => {
@@ -199,6 +203,26 @@ export default function LmnpPage() {
     if (session && activeTab === "declaration") fetchDeclaration(declarationAnnee);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, activeTab, declarationAnnee]);
+
+  useEffect(() => {
+    if (!session) return;
+    const reset = () => {
+      clearTimeout(timerRef.current);
+      clearTimeout(warningRef.current);
+      setShowWarning(false);
+      warningRef.current = setTimeout(() => setShowWarning(true), 29 * 60 * 1000);
+      timerRef.current = setTimeout(() => signOut({ callbackUrl: "/crypto/login" }), 30 * 60 * 1000);
+    };
+    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart", "click"];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset));
+      clearTimeout(timerRef.current);
+      clearTimeout(warningRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   async function fetchDeclaration(yr) {
     setDeclarationLoading(true);
@@ -286,6 +310,27 @@ export default function LmnpPage() {
         autres_libelle: charges.autres_libelle || null,
       }),
     });
+  }
+
+  async function copyChargesFromN1() {
+    const prevAnnee = annee - 1;
+    const res = await fetch(`/api/lmnp/charges?annee=${prevAnnee}`);
+    const data = await res.json();
+    if (data.charges) {
+      setCharges({
+        loyer_annuel: data.charges.loyer_annuel || "",
+        taxe_fonciere: data.charges.taxe_fonciere || "",
+        assurance_pno: data.charges.assurance_pno || "",
+        cfe: data.charges.cfe || "",
+        frais_comptabilite: data.charges.frais_comptabilite || "",
+        interets_emprunt: data.charges.interets_emprunt || "",
+        autres: data.charges.autres || "",
+        autres_libelle: data.charges.autres_libelle || "",
+      });
+    } else {
+      setCopyN1Toast(`Aucune donnée trouvée pour ${prevAnnee}`);
+      setTimeout(() => setCopyN1Toast(null), 3000);
+    }
   }
 
   function addFiles(fileList) {
@@ -1222,7 +1267,18 @@ export default function LmnpPage() {
 
                 {/* Charges récurrentes */}
                 <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-lg font-bold text-white">Charges récurrentes — {annee}</h3>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-lg font-bold text-white">Charges récurrentes — {annee}</h3>
+                    <button
+                      onClick={copyChargesFromN1}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-[#2a4a4d] text-zinc-400 hover:border-[#C9A84C]/50 hover:text-zinc-300 transition-colors"
+                    >
+                      Copier depuis {annee - 1}
+                    </button>
+                  </div>
+                  {copyN1Toast && (
+                    <p className="text-xs text-amber-400 bg-amber-500/10 ring-1 ring-amber-500/20 rounded-lg px-3 py-2">{copyN1Toast}</p>
+                  )}
                   <div>
                     <label className="text-xs text-zinc-400 mb-1 block">Loyers annuels perçus (€) — utilisé pour la déclaration 2031 Case DA</label>
                     <input
@@ -2192,6 +2248,30 @@ export default function LmnpPage() {
             >
               Fermer
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modale expiration session ── */}
+      {showWarning && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white">Session sur le point d&apos;expirer</h3>
+            <p className="text-sm text-zinc-400">Vous serez déconnecté dans 60 secondes pour inactivité.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWarning(false)}
+                className="flex-1 bg-[#C9A84C] text-black font-bold py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+              >
+                Rester connecté
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "/crypto/login" })}
+                className="flex-1 border border-[#2a4a4d] text-zinc-400 py-2 rounded-lg text-sm hover:border-zinc-500 transition-colors"
+              >
+                Se déconnecter
+              </button>
+            </div>
           </div>
         </div>
       )}

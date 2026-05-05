@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -875,18 +875,66 @@ function Dashboard({ session, onLogout }) {
 export default function CryptoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [showWarning, setShowWarning] = useState(false);
+  const timerRef = useRef(null);
+  const warningRef = useRef(null);
 
   useEffect(() => {
     if (status === "unauthenticated" || (status === "authenticated" && session?.role !== "crypto"))
       router.push("/crypto/login");
   }, [status, session, router]);
 
+  useEffect(() => {
+    if (!session) return;
+    const reset = () => {
+      clearTimeout(timerRef.current);
+      clearTimeout(warningRef.current);
+      setShowWarning(false);
+      warningRef.current = setTimeout(() => setShowWarning(true), 29 * 60 * 1000);
+      timerRef.current = setTimeout(() => signOut({ callbackUrl: "/crypto/login" }), 30 * 60 * 1000);
+    };
+    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart", "click"];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset));
+      clearTimeout(timerRef.current);
+      clearTimeout(warningRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
   if (status === "loading") return null;
   if (!session) return null;
 
   return (
-    <main className="flex-1 bg-[#12282A] min-h-screen">
-      <Dashboard session={session} onLogout={() => signOut({ callbackUrl: "/crypto/login" })}/>
-    </main>
+    <>
+      <main className="flex-1 bg-[#12282A] min-h-screen">
+        <Dashboard session={session} onLogout={() => signOut({ callbackUrl: "/crypto/login" })}/>
+      </main>
+
+      {showWarning && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white">Session sur le point d&apos;expirer</h3>
+            <p className="text-sm text-zinc-400">Vous serez déconnecté dans 60 secondes pour inactivité.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWarning(false)}
+                className="flex-1 bg-[#C9A84C] text-black font-bold py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+              >
+                Rester connecté
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "/crypto/login" })}
+                className="flex-1 border border-[#2a4a4d] text-zinc-400 py-2 rounded-lg text-sm hover:border-zinc-500 transition-colors"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

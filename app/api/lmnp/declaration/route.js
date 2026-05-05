@@ -109,6 +109,7 @@ export async function GET(request) {
 
   return Response.json({
     annee,
+    deficit_fiscal: resultatAvantAmort < 0 ? Math.abs(resultatAvantAmort) : 0,
     cases2031: {
       DA,
       case10: chargesExternes,

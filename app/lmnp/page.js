@@ -171,10 +171,11 @@ export default function LmnpPage() {
   const [copyConfirmA, setCopyConfirmA] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [copyN1Toast, setCopyN1Toast] = useState(null);
+  const [deficitN1Source, setDeficitN1Source] = useState(null);
 
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/crypto/login");
+    if (status === "unauthenticated") router.push("/crypto/login?callbackUrl=/lmnp");
   }, [status, router]);
 
   useEffect(() => { fetch("/api/lmnp/init"); }, []);
@@ -211,7 +212,7 @@ export default function LmnpPage() {
       clearTimeout(warningRef.current);
       setShowWarning(false);
       warningRef.current = setTimeout(() => setShowWarning(true), 29 * 60 * 1000);
-      timerRef.current = setTimeout(() => signOut({ callbackUrl: "/crypto/login" }), 30 * 60 * 1000);
+      timerRef.current = setTimeout(() => signOut({ callbackUrl: "/crypto/login?callbackUrl=/lmnp" }), 30 * 60 * 1000);
     };
     const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart", "click"];
     events.forEach(e => window.addEventListener(e, reset, { passive: true }));
@@ -331,6 +332,23 @@ export default function LmnpPage() {
       setCopyN1Toast(`Aucune donnée trouvée pour ${prevAnnee}`);
       setTimeout(() => setCopyN1Toast(null), 3000);
     }
+  }
+
+  async function openSimulation() {
+    const prevAnnee = annee - 1;
+    try {
+      const res = await fetch(`/api/lmnp/declaration?annee=${prevAnnee}`);
+      const data = await res.json();
+      if (data.deficit_fiscal > 0) {
+        setDeficitReporte(String(data.deficit_fiscal.toFixed(2)));
+        setDeficitN1Source(prevAnnee);
+      } else {
+        setDeficitN1Source(null);
+      }
+    } catch {
+      setDeficitN1Source(null);
+    }
+    setShowSimulation(true);
   }
 
   function addFiles(fileList) {
@@ -1398,7 +1416,7 @@ export default function LmnpPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => setShowSimulation(true)}
+                      onClick={openSimulation}
                       className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
                     >
                       Simulation fiscale
@@ -2101,6 +2119,9 @@ export default function LmnpPage() {
                   onChange={e => setDeficitReporte(e.target.value)}
                   className={inputClass}
                 />
+                {deficitN1Source && (
+                  <p className="text-xs text-zinc-500 mt-1">(calculé depuis {deficitN1Source})</p>
+                )}
               </div>
             </div>
 

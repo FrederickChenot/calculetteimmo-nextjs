@@ -1,9 +1,9 @@
 "use client";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function CryptoLogin() {
+function LoginForm() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,6 +12,8 @@ export default function CryptoLogin() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/crypto";
 
   async function handleEmail() {
     setError(null);
@@ -43,7 +45,7 @@ export default function CryptoLogin() {
     if (res?.error) {
       setError("Email ou mot de passe incorrect");
     } else {
-      router.push("/crypto");
+      router.push(callbackUrl);
     }
     setLoading(false);
   }
@@ -61,7 +63,7 @@ export default function CryptoLogin() {
         </p>
 
         {/* Google */}
-        <button onClick={() => signIn("google", { callbackUrl: "/crypto" })}
+        <button onClick={() => signIn("google", { callbackUrl })}
           className="w-full flex items-center justify-center gap-3 border border-[#2a4a4d] text-zinc-200 py-2 rounded-lg hover:border-zinc-500 transition-colors text-sm mb-4">
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -81,13 +83,16 @@ export default function CryptoLogin() {
         {/* Email */}
         <div className="flex flex-col gap-3">
           <input type="email" placeholder="Email" value={email}
-            onChange={e => setEmail(e.target.value)} autoComplete="off" className={inputClass}/>
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleEmail()}
+            autoComplete="off" className={inputClass}/>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Mot de passe (8 car. min)"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleEmail()}
               autoComplete="new-password"
               className={inputClass + " pr-10"}
             />
@@ -139,5 +144,13 @@ export default function CryptoLogin() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function CryptoLogin() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

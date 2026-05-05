@@ -164,8 +164,9 @@ export default function LmnpPage() {
   const [declarationAnnee, setDeclarationAnnee] = useState(2025);
   const [declarationData, setDeclarationData] = useState(null);
   const [declarationLoading, setDeclarationLoading] = useState(false);
-  const [checklist, setChecklist] = useState([false, false, false, false, false]);
+  const [checklist, setChecklist] = useState([false, false, false, false, false, false, false]);
   const [copyConfirm, setCopyConfirm] = useState(false);
+  const [copyConfirmA, setCopyConfirmA] = useState(false);
 
 
   useEffect(() => {
@@ -1371,21 +1372,23 @@ export default function LmnpPage() {
                   ))}
                 </div>
 
-                {/* Section 1 : Checklist */}
+                {/* ══ SECTION 1 — CHECKLIST ══ */}
                 <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
                   <h3 className="text-lg font-bold text-white">Checklist avant déclaration {declarationAnnee}</h3>
                   <div className="space-y-3">
                     {[
-                      "Toutes mes factures sont uploadées et classifiées",
-                      "Les charges récurrentes sont saisies",
-                      "La valeur vénale du bien immobilier est renseignée",
-                      "J'ai vérifié la ventilation facture par facture",
-                      "J'ai le numéro SIRET (833 889 918 00029)",
+                      "Toutes mes factures uploadées et classifiées",
+                      "Charges récurrentes saisies (taxe foncière, PNO…)",
+                      "Valeur vénale du bien immobilier renseignée",
+                      "Ventilation vérifiée facture par facture",
+                      "SIRET disponible : 833 889 918 00029",
+                      "Espace professionnel impots.gouv.fr créé",
+                      `Date limite 2031 notée : 18 septembre ${declarationAnnee + 1}`,
                     ].map((item, i) => (
                       <label key={i} className="flex items-center gap-3 cursor-pointer group">
                         <input
                           type="checkbox"
-                          checked={checklist[i]}
+                          checked={checklist[i] || false}
                           onChange={() => setChecklist(prev => prev.map((v, j) => j === i ? !v : v))}
                           className="h-4 w-4 accent-[#C9A84C] cursor-pointer flex-shrink-0"
                         />
@@ -1397,230 +1400,470 @@ export default function LmnpPage() {
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs text-zinc-400">
-                      <span>{checklist.filter(Boolean).length}/5 complété</span>
-                      <span>{checklist.every(Boolean) ? "✓ Prêt à déclarer" : ""}</span>
+                      <span>{checklist.filter(Boolean).length}/7 complété</span>
+                      <span>{checklist.filter(Boolean).length === 7 ? "✓ Prêt à déclarer" : ""}</span>
                     </div>
                     <div className="h-2 bg-[#0d1f21] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#C9A84C] rounded-full transition-all"
-                        style={{ width: `${(checklist.filter(Boolean).length / 5) * 100}%` }}
+                        style={{ width: `${(checklist.filter(Boolean).length / 7) * 100}%` }}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Section 2 : Récapitulatif fiscal */}
-                <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-5">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <h3 className="text-lg font-bold text-white">Récapitulatif fiscal {declarationAnnee}</h3>
-                    {declarationData && (
+                {/* ══ SECTION 2 — LIASSE FISCALE 2031-SD ══ */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Formulaire 2031-SD</h3>
+                    <p className="text-sm text-zinc-400 mt-1">
+                      À déposer avant le{" "}
+                      <span className="text-[#C9A84C] font-semibold">18 septembre {declarationAnnee + 1}</span>
+                      {" "}— impots.gouv.fr → Espace Professionnel
+                    </p>
+                  </div>
+
+                  {/* Cadre A — Identification */}
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <h4 className="font-bold text-white">Cadre A — Identification</h4>
                       <button
                         onClick={() => {
-                          const d = declarationData.cases2031;
-                          const txt = `Case DA : ${d.DA.toFixed(2)} €\nCase 10 : ${d.case10.toFixed(2)} €\nCase 14 : ${d.case14.toFixed(2)} €\nCase GG : ${d.caseGG.toFixed(2)} €\nAmort. différés (hors bilan) : ${d.amortDifferes.toFixed(2)} €`;
+                          const txt = [
+                            "Nom/Prénom : CHENOT Frederick Franck",
+                            "SIRET : 833 889 918 00029",
+                            "Adresse : 44A rue d'Epinal - 88000 Jeuxey",
+                            "Activité : Location meublée (68.20A)",
+                            "Date début : 19/05/2025",
+                            "Régime : Réel simplifié BIC",
+                            `Clôture : 31/12/${declarationAnnee}`,
+                          ].join("\n");
                           navigator.clipboard.writeText(txt).then(() => {
-                            setCopyConfirm(true);
-                            setTimeout(() => setCopyConfirm(false), 2000);
+                            setCopyConfirmA(true);
+                            setTimeout(() => setCopyConfirmA(false), 2000);
                           });
                         }}
                         className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
                       >
-                        {copyConfirm ? "Copié !" : "Copier les valeurs"}
+                        {copyConfirmA ? "Copié !" : "Copier tout"}
                       </button>
-                    )}
+                    </div>
+                    <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                      {[
+                        ["Nom / Prénom", "CHENOT Frederick Franck"],
+                        ["SIRET", "833 889 918 00029"],
+                        ["Adresse", "44A rue d'Epinal — 88000 Jeuxey"],
+                        ["Activité", "Location meublée (68.20A)"],
+                        ["Date début", "19/05/2025"],
+                        ["Régime", "Réel simplifié BIC"],
+                        ["Clôture exercice", `31/12/${declarationAnnee}`],
+                      ].map(([label, val]) => (
+                        <div key={label} className="flex justify-between items-center px-4 py-3">
+                          <span className="text-zinc-400 text-sm">{label}</span>
+                          <span className="font-mono text-sm text-white">{val}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {declarationLoading && <p className="text-zinc-400 text-sm">Chargement...</p>}
+                  {/* Cadre B — Compte de résultat */}
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <h4 className="font-bold text-white">Cadre B — Compte de résultat</h4>
+                      {declarationData && (
+                        <button
+                          onClick={() => {
+                            const d = declarationData;
+                            const cfe_v = parseFloat(charges?.cfe || 0);
+                            const dh_v = d.cases2031.case10 - cfe_v;
+                            const txt = [
+                              `Case DA — Recettes brutes : ${d.cases2031.DA.toFixed(2)} €`,
+                              `Case DB — Achats : 0,00 €`,
+                              `Case DC — Variation stocks : 0,00 €`,
+                              `Case DH — Charges externes : ${dh_v.toFixed(2)} €`,
+                              `Case DI — Impôts et taxes (CFE) : ${cfe_v.toFixed(2)} €`,
+                              `Case DJ — Charges personnel : 0,00 €`,
+                              `Case DL — Dotations amortissements : ${d.cases2031.case14.toFixed(2)} €`,
+                              `Case DN — Autres charges : 0,00 €`,
+                              d.cases2031.isDeficit
+                                ? `Case GG — Déficit fiscal : ${d.cases2031.caseGG.toFixed(2)} €`
+                                : `Case GP — Bénéfice fiscal : ${d.cases2031.caseGG.toFixed(2)} €`,
+                              `Amortissements différés (2033-C) : ${d.cases2031.amortDifferes.toFixed(2)} €`,
+                            ].join("\n");
+                            navigator.clipboard.writeText(txt).then(() => {
+                              setCopyConfirm(true);
+                              setTimeout(() => setCopyConfirm(false), 2000);
+                            });
+                          }}
+                          className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                        >
+                          {copyConfirm ? "Copié !" : "Copier les valeurs 2031"}
+                        </button>
+                      )}
+                    </div>
 
-                  {declarationData && (
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {/* Formulaire 2031-SD */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Formulaire 2031-SD</p>
+                    {declarationLoading && <p className="text-zinc-400 text-sm">Chargement...</p>}
+
+                    {declarationData && (() => {
+                      const d = declarationData;
+                      const cfe_v = parseFloat(charges?.cfe || 0);
+                      const dh_v = d.cases2031.case10 - cfe_v;
+                      return (
                         <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
                           {[
-                            ["Case DA — Recettes brutes", declarationData.cases2031.DA, "text-white"],
-                            ["Case 10 — Charges externes", declarationData.cases2031.case10, "text-emerald-400"],
-                            ["Case 14 — Amortissements", declarationData.cases2031.case14, "text-orange-400"],
-                            [
-                              `Case GG — Résultat ${declarationData.cases2031.isDeficit ? "déficit" : "bénéfice"}`,
-                              declarationData.cases2031.caseGG,
-                              declarationData.cases2031.isDeficit ? "text-emerald-400" : "text-amber-400",
-                            ],
+                            ["Case DA — Recettes brutes", d.cases2031.DA, "text-white"],
+                            ["Case DB — Achats", 0, "text-zinc-500"],
+                            ["Case DC — Variation stocks", 0, "text-zinc-500"],
+                            ["Case DH — Charges externes", dh_v, "text-emerald-400"],
+                            ["Case DI — Impôts et taxes (CFE)", cfe_v, "text-emerald-400"],
+                            ["Case DJ — Charges personnel", 0, "text-zinc-500"],
+                            ["Case DL — Dotations amortissements", d.cases2031.case14, "text-orange-400"],
+                            ["Case DN — Autres charges", 0, "text-zinc-500"],
                           ].map(([label, val, cls]) => (
                             <div key={label} className="flex justify-between items-center px-4 py-3">
                               <span className="text-zinc-400 text-sm">{label}</span>
                               <span className={`font-semibold text-sm ${cls}`}>{fmt(val)} €</span>
                             </div>
                           ))}
-                          {declarationData.cases2031.amortDifferes > 0 && (
-                            <div className="flex justify-between items-start px-4 py-3 bg-zinc-800/30">
-                              <div>
-                                <span className="text-zinc-500 text-sm">Amortissements différés (hors bilan fiscal)</span>
-                                <p className="text-xs text-zinc-600">à reporter sur 2033-C — reportables sur bénéfices LMNP futurs</p>
-                              </div>
-                              <span className="font-semibold text-sm text-zinc-400 flex-shrink-0 ml-3">{fmt(declarationData.cases2031.amortDifferes)} €</span>
-                            </div>
-                          )}
-                        </div>
-                        {(declarationData.cases2031.isDeficit || declarationData.cases2031.amortDifferes > 0) && (
-                          <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-xl p-3 space-y-1">
-                            <p className="text-xs font-semibold text-amber-400">⚠️ Note fiscale (art. 39C CGI)</p>
-                            {declarationData.cases2031.isDeficit && (
-                              <p className="text-xs text-zinc-400">
-                                Case GG = déficit de charges uniquement : <span className="text-emerald-400 font-semibold">{fmt(declarationData.cases2031.deficitCharges)} €</span>
-                              </p>
-                            )}
-                            {declarationData.cases2031.amortDifferes > 0 && (
-                              <p className="text-xs text-zinc-400">
-                                Les amortissements (<span className="text-orange-400 font-semibold">{fmt(declarationData.cases2031.amortDifferes)} €</span>) ne créent pas de déficit fiscal — ils sont différés et reportés sur vos futurs bénéfices LMNP.
-                              </p>
-                            )}
-                            <p className="text-xs text-zinc-500">
-                              À reporter sur le formulaire 2033-C comme « amortissements différés ».
-                            </p>
+                          <div className="flex justify-between items-center px-4 py-4 bg-[#1a3335]">
+                            <span className="text-sm font-bold text-white">
+                              {d.cases2031.isDeficit ? "Case GG — Déficit fiscal" : "Case GP — Bénéfice fiscal"}
+                            </span>
+                            <span className={`font-bold text-base ${d.cases2031.isDeficit ? "text-emerald-400" : "text-amber-400"}`}>
+                              {fmt(d.cases2031.caseGG)} €
+                            </span>
                           </div>
+                        </div>
+                      );
+                    })()}
+
+                    {(declarationData?.cases2031.isDeficit || declarationData?.cases2031.amortDifferes > 0) && (
+                      <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-xl p-3 space-y-1">
+                        <p className="text-xs font-semibold text-amber-400">⚠️ Note fiscale (art. 39C CGI)</p>
+                        {declarationData.cases2031.isDeficit && (
+                          <p className="text-xs text-zinc-400">
+                            Case GG = déficit de charges uniquement :{" "}
+                            <span className="text-emerald-400 font-semibold">{fmt(declarationData.cases2031.deficitCharges)} €</span>
+                          </p>
+                        )}
+                        {declarationData.cases2031.amortDifferes > 0 && (
+                          <p className="text-xs text-zinc-400">
+                            Les amortissements ({" "}
+                            <span className="text-orange-400 font-semibold">{fmt(declarationData.cases2031.amortDifferes)} €</span>
+                            {" "}) ne créent pas de déficit — différés et reportés sur bénéfices LMNP futurs.
+                          </p>
                         )}
                       </div>
+                    )}
 
-                      {/* Formulaire 2033-B */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Formulaire 2033-B</p>
-                        <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
-                          {[
-                            ["Produits (loyers)", declarationData.cases2033B.produits, "text-white"],
-                            ["Charges déductibles", declarationData.cases2033B.chargesDeductibles, "text-emerald-400"],
-                            ["Dotations amortissements", declarationData.cases2033B.dotationsAmort, "text-orange-400"],
-                            ["Résultat net", declarationData.cases2033B.resultatNet, declarationData.cases2033B.resultatNet < 0 ? "text-emerald-400" : "text-amber-400"],
-                          ].map(([label, val, cls]) => (
-                            <div key={label} className="flex justify-between items-center px-4 py-3">
-                              <span className="text-zinc-400 text-sm">{label}</span>
-                              <span className={`font-semibold text-sm ${cls}`}>{val < 0 ? "−" : ""}{fmt(Math.abs(val))} €</span>
+                    {declarationData?.cases2031.amortDifferes > 0 && (
+                      <div className="bg-[#0d1f21] ring-1 ring-zinc-700 rounded-xl p-4">
+                        <p className="text-sm font-semibold text-zinc-300 mb-1">Amortissements différés (hors case 2031)</p>
+                        <p className="text-xs text-zinc-500 mb-2">Ces amortissements ne figurent pas en case GG mais doivent être déclarés sur le 2033-C</p>
+                        <p className="text-2xl font-bold text-orange-400">{fmt(declarationData.cases2031.amortDifferes)} €</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ══ SECTION 3 — ANNEXES 2033 ══ */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-white">Annexes 2033</h3>
+
+                  {/* 2033-A — Bilan simplifié */}
+                  {declarationData && (() => {
+                    const factAmortHT = declarationData.tableau2033C
+                      .filter(r => !r.isBien)
+                      .reduce((s, r) => s + r.valeur, 0);
+                    const totalImmob = valeurVenale + factAmortHT;
+                    const resultat = declarationData.cases2033B.resultatNet;
+                    return (
+                      <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                        <h4 className="font-bold text-white">2033-A — Bilan simplifié</h4>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">ACTIF</p>
+                            <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                              <div className="flex justify-between items-center px-4 py-3">
+                                <span className="text-zinc-400 text-sm">Bien immobilier (brut)</span>
+                                <span className="font-semibold text-sm text-white">{fmt(valeurVenale)} €</span>
+                              </div>
+                              <div className="flex justify-between items-center px-4 py-3">
+                                <span className="text-zinc-400 text-sm">Factures amortissables (brut)</span>
+                                <span className="font-semibold text-sm text-white">{fmt(factAmortHT)} €</span>
+                              </div>
+                              <div className="flex justify-between items-center px-4 py-3 bg-[#1a3335]">
+                                <span className="font-bold text-white text-sm">Total immobilisations</span>
+                                <span className="font-bold text-[#C9A84C] text-sm">{fmt(totalImmob)} €</span>
+                              </div>
                             </div>
-                          ))}
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">PASSIF</p>
+                            <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                              <div className="flex justify-between items-center px-4 py-3">
+                                <span className="text-zinc-400 text-sm">Capital apporté</span>
+                                <span className="font-semibold text-sm text-white">{fmt(totalImmob)} €</span>
+                              </div>
+                              <div className="flex justify-between items-center px-4 py-3">
+                                <span className="text-zinc-400 text-sm">Résultat de l&apos;exercice</span>
+                                <span className={`font-semibold text-sm ${resultat < 0 ? "text-emerald-400" : "text-amber-400"}`}>
+                                  {resultat < 0 ? "−" : ""}{fmt(Math.abs(resultat))} €
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* 2033-B — Compte de résultat simplifié */}
+                  {declarationData && (
+                    <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                      <h4 className="font-bold text-white">2033-B — Compte de résultat simplifié</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">PRODUITS</p>
+                          <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                            <div className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">Chiffre d&apos;affaires (loyers)</span>
+                              <span className="font-semibold text-sm text-white">{fmt(declarationData.cases2033B.produits)} €</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">CHARGES</p>
+                          <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                            <div className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">Charges factures déductibles</span>
+                              <span className="font-semibold text-sm text-emerald-400">{fmt(declarationData.detail.deductibleHt)} €</span>
+                            </div>
+                            <div className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">Charges récurrentes</span>
+                              <span className="font-semibold text-sm text-emerald-400">{fmt(declarationData.detail.totalChargesRec)} €</span>
+                            </div>
+                            <div className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">Amortissements déduits</span>
+                              <span className="font-semibold text-sm text-orange-400">{fmt(declarationData.cases2031.case14)} €</span>
+                            </div>
+                            <div className="flex justify-between items-center px-4 py-3">
+                              <span className="text-zinc-400 text-sm">Amortissements différés</span>
+                              <span className="font-semibold text-sm text-zinc-500">{fmt(declarationData.cases2031.amortDifferes)} €</span>
+                            </div>
+                            <div className="flex justify-between items-center px-4 py-3 bg-[#1a3335]">
+                              <span className="font-bold text-white text-sm">Résultat net</span>
+                              <span className={`font-bold text-sm ${declarationData.cases2033B.resultatNet < 0 ? "text-emerald-400" : "text-amber-400"}`}>
+                                {declarationData.cases2033B.resultatNet < 0 ? "−" : ""}{fmt(Math.abs(declarationData.cases2033B.resultatNet))} €
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
+
+                  {/* 2033-C — Tableau des amortissements */}
+                  {declarationData && (
+                    <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <h4 className="font-bold text-white">2033-C — Tableau des amortissements</h4>
+                        <button
+                          onClick={export2033C}
+                          className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
+                        >
+                          Exporter 2033-C en CSV
+                        </button>
+                      </div>
+                      {declarationData.tableau2033C.length === 0 ? (
+                        <p className="text-zinc-400 text-sm">Aucun élément amortissable pour {declarationAnnee}</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-[#2a4a4d]">
+                                {["Désignation", "Valeur €", "Durée", "Amort/an", "Cumul", "VNC"].map(h => (
+                                  <th key={h} className="text-left px-3 py-2 text-xs text-zinc-400 font-medium">{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {declarationData.tableau2033C.map((r, i) => (
+                                <tr key={i} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21]">
+                                  <td className="px-3 py-2.5 text-zinc-300 max-w-[180px] truncate">{r.designation}</td>
+                                  <td className="px-3 py-2.5 text-white font-medium">{fmt(r.valeur)} €</td>
+                                  <td className="px-3 py-2.5 text-zinc-400">{r.duree} ans</td>
+                                  <td className="px-3 py-2.5 text-orange-400">{fmt(r.amortAn)} €</td>
+                                  <td className="px-3 py-2.5 text-orange-400">{fmt(r.cumul)} €</td>
+                                  <td className="px-3 py-2.5 text-zinc-300">{fmt(r.vnc)} €</td>
+                                </tr>
+                              ))}
+                              <tr className="border-t-2 border-[#C9A84C]/30 bg-[#0d1f21]">
+                                <td className="px-3 py-2.5 font-bold text-white" colSpan={3}>TOTAL</td>
+                                <td className="px-3 py-2.5 font-bold text-orange-400">{fmt(declarationData.totalAmort)} €</td>
+                                <td className="px-3 py-2.5 font-bold text-orange-400">{fmt(declarationData.totalAmort)} €</td>
+                                <td />
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 2033-D — Relevé des provisions */}
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
+                      <span className="text-zinc-400 text-lg font-bold">—</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white">2033-D — Relevé des provisions</h4>
+                      <p className="text-sm text-zinc-400 mt-0.5">Aucune provision constituée — <span className="font-semibold text-zinc-300">néant</span></p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Section 3 : Tableau 2033-C */}
-                {declarationData && (
-                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                      <h3 className="text-lg font-bold text-white">Tableau des amortissements 2033-C</h3>
-                      <button
-                        onClick={export2033C}
-                        className="bg-[#C9A84C] text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
-                      >
-                        Exporter 2033-C en CSV
-                      </button>
-                    </div>
-                    {declarationData.tableau2033C.length === 0 ? (
-                      <p className="text-zinc-400 text-sm">Aucun élément amortissable pour {declarationAnnee}</p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-[#2a4a4d]">
-                              {["Désignation", "Valeur", "Durée", "Amort/an", "Cumul", "VNC"].map(h => (
-                                <th key={h} className="text-left px-3 py-2 text-xs text-zinc-400 font-medium">{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {declarationData.tableau2033C.map((r, i) => (
-                              <tr key={i} className="border-b border-[#2a4a4d] last:border-0 hover:bg-[#0d1f21]">
-                                <td className="px-3 py-2.5 text-zinc-300 max-w-[180px] truncate">{r.designation}</td>
-                                <td className="px-3 py-2.5 text-white font-medium">{fmt(r.valeur)} €</td>
-                                <td className="px-3 py-2.5 text-zinc-400">{r.duree} ans</td>
-                                <td className="px-3 py-2.5 text-orange-400">{fmt(r.amortAn)} €</td>
-                                <td className="px-3 py-2.5 text-orange-400">{fmt(r.cumul)} €</td>
-                                <td className="px-3 py-2.5 text-zinc-300">{fmt(r.vnc)} €</td>
-                              </tr>
-                            ))}
-                            <tr className="border-t-2 border-[#C9A84C]/30 bg-[#0d1f21]">
-                              <td className="px-3 py-2.5 font-bold text-white" colSpan={3}>TOTAL</td>
-                              <td className="px-3 py-2.5 font-bold text-orange-400">{fmt(declarationData.totalAmort)} €</td>
-                              <td className="px-3 py-2.5 font-bold text-orange-400">{fmt(declarationData.totalAmort)} €</td>
-                              <td />
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                {/* ══ SECTION 4 — DÉCLARATION REVENUS ══ */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Formulaire 2042-C-PRO + 2042</h3>
+                    <p className="text-sm text-zinc-400 mt-1">
+                      À déposer en{" "}
+                      <span className="text-[#C9A84C] font-semibold">mai {declarationAnnee + 1}</span>
+                      {" "}— impots.gouv.fr → Espace Particulier
+                    </p>
                   </div>
-                )}
 
-                {/* Section 4 : Guide pas à pas */}
+                  {/* 2042-C-PRO */}
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
+                    <h4 className="font-bold text-white">2042-C-PRO — Cases LMNP</h4>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                      Rubrique : Locations meublées non professionnelles — Régime réel
+                    </p>
+                    {declarationData ? (
+                      <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
+                        {declarationData.cases2031.isDeficit ? (
+                          <div className="flex justify-between items-center px-4 py-4">
+                            <div>
+                              <p className="text-zinc-300 text-sm font-semibold">Case 5KE — Déficit LMNP</p>
+                              <p className="text-xs text-zinc-500 mt-0.5">Déclarant principal (Fred) ou 5KF (conjoint)</p>
+                            </div>
+                            <span className="font-bold text-emerald-400 text-xl ml-4">{fmt(declarationData.cases2031.caseGG)} €</span>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-center px-4 py-4">
+                            <div>
+                              <p className="text-zinc-300 text-sm font-semibold">Case 5KP — Bénéfice LMNP</p>
+                              <p className="text-xs text-zinc-500 mt-0.5">Déclarant principal (Fred) ou 5KR (conjoint)</p>
+                            </div>
+                            <span className="font-bold text-amber-400 text-xl ml-4">{fmt(declarationData.cases2031.caseGG)} €</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-zinc-400 text-sm">Chargement...</p>
+                    )}
+                    <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-xl p-3 space-y-1">
+                      <p className="text-xs font-semibold text-amber-400">⚠️ Important</p>
+                      <p className="text-xs text-zinc-400">
+                        Ce déficit <strong className="text-zinc-300">NE S&apos;IMPUTE PAS</strong> sur le revenu global.
+                        Il est reportable sur futurs bénéfices LMNP (10 ans max).
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 2044 — Location nue */}
+                  <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-3">
+                    <h4 className="font-bold text-white">2044 — Location nue (pour mémoire)</h4>
+                    <div className="bg-[#0d1f21] rounded-xl p-4 space-y-2">
+                      <p className="text-sm text-zinc-300">
+                        Votre déclaration 2044 habituelle reste{" "}
+                        <span className="font-semibold text-white">inchangée</span>{" "}
+                        pour la maison louée nue.
+                      </p>
+                      <p className="text-xs text-zinc-500">44 rue d&apos;Epinal (hors appartement LMNP)</p>
+                      <div className="mt-3">
+                        <span className="inline-block bg-emerald-500/10 ring-1 ring-emerald-500/30 rounded-lg px-3 py-1.5">
+                          <span className="text-xs font-semibold text-emerald-400">Les deux déclarations sont INDÉPENDANTES</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ══ SECTION 5 — GUIDE PAS À PAS ══ */}
                 <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-lg font-bold text-white">Comment déclarer sur impots.gouv.fr</h3>
+                  <h3 className="text-lg font-bold text-white">Guide pas à pas — Comment déclarer</h3>
                   <div className="space-y-3">
                     {[
                       {
+                        icon: "🏢",
+                        title: "Créer l'espace professionnel",
+                        body: `impots.gouv.fr → Votre espace professionnel → Créer mon espace → SIRET : 833 889 918 00029 → Valider avec votre numéro fiscal`,
+                      },
+                      {
                         icon: "📋",
-                        title: "Créer votre espace professionnel",
-                        body: `Allez sur impots.gouv.fr → Votre espace professionnel → Créer → SIRET : 833 889 918 00029`,
+                        title: "Accéder à la liasse 2031",
+                        body: `Espace pro → Déclarations → Déclaration de résultats → Régime réel simplifié BIC (2031) → Exercice du ${declarationAnnee === 2025 ? "19/05/2025" : "01/01/" + declarationAnnee} au 31/12/${declarationAnnee}`,
                       },
                       {
-                        icon: "📝",
-                        title: "Déclarer la liasse 2031",
-                        body: `Déclarations → Liasse fiscale → Régime réel simplifié BIC → Date limite : 18 septembre ${declarationAnnee + 1}`,
-                      },
-                      {
-                        icon: "📊",
-                        title: "Remplir le formulaire 2031-SD",
-                        body: `Utilisez les valeurs du récapitulatif ci-dessus. Case DA = recettes, Case 10 = charges, Case 14 = amortissements, Case GG = déficit`,
+                        icon: "✍️",
+                        title: "Remplir le 2031-SD",
+                        body: `Utilisez les valeurs du Cadre B ci-dessus. Joindre obligatoirement les annexes 2033.`,
                       },
                       {
                         icon: "📎",
-                        title: "Joindre les annexes 2033",
-                        body: `2033-B : compte de résultat simplifié\n2033-C : tableau des amortissements\n2033-D : relevé des provisions`,
+                        title: "Joindre les annexes",
+                        body: `2033-A : bilan → valeurs ci-dessus\n2033-B : compte de résultat → valeurs ci-dessus\n2033-C : tableau amortissements → exporter CSV et recopier\n2033-D : provisions → néant`,
                       },
                       {
-                        icon: "💰",
-                        title: "Déclaration revenus 2042-C-PRO",
-                        body: `Mai ${declarationAnnee + 1} → Formulaire 2042-C-PRO → Rubrique LMNP réel → Case 5KE (déficit) ou Case 5KP (bénéfice)`,
+                        icon: "✅",
+                        title: "Valider et télétransmettre",
+                        body: `Date limite : 18 septembre ${declarationAnnee + 1}\nConserver l'accusé de réception`,
+                      },
+                      {
+                        icon: "📝",
+                        title: "Compléter la 2042-C-PRO",
+                        body: `Mai ${declarationAnnee + 1} → Déclaration revenus habituelle → Ajouter case 5KE : ${declarationData ? fmt(declarationData.cases2031.caseGG) + " €" : "…"}\n→ Votre femme conserve ses cases BNC habituelles`,
                       },
                       {
                         icon: "⚠️",
-                        title: "CFE à prévoir",
-                        body: `En ${declarationAnnee + 1} vous recevrez votre premier avis CFE (200–500 € selon commune). Déductible en LMNP ${declarationAnnee + 1}.`,
+                        title: `CFE à prévoir en ${declarationAnnee + 1}`,
+                        body: `Vous recevrez un avis CFE (200–500 €)\nExonéré en ${declarationAnnee} (première année)\nDéductible en charges LMNP ${declarationAnnee + 1}`,
+                      },
+                      {
+                        icon: "💡",
+                        title: "Conseil",
+                        body: `Pour votre première déclaration 2031, jedeclaremonmeuble.com (~150 € après déduction fiscale) peut vous accompagner`,
                       },
                     ].map((step, i) => (
-                      <div key={i} className="bg-[#0d1f21] rounded-xl p-4 flex gap-4">
+                      <div key={i} className={`bg-[#0d1f21] rounded-xl p-4 flex gap-4 ${i === 7 ? "ring-1 ring-[#C9A84C]/30" : ""}`}>
                         <span className="text-2xl flex-shrink-0">{step.icon}</span>
                         <div>
                           <p className="font-semibold text-white text-sm mb-1">
-                            <span className="text-zinc-500 mr-2">{i + 1}.</span>{step.title}
+                            {i < 7 && <span className="text-zinc-500 mr-2">{i + 1}.</span>}{step.title}
                           </p>
                           <p className="text-zinc-400 text-sm whitespace-pre-line">{step.body}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-amber-500/10 ring-1 ring-amber-500/30 rounded-xl p-4 flex items-start gap-3">
-                    <span className="text-amber-400 font-bold text-sm flex-shrink-0">Recommandé</span>
-                    <p className="text-zinc-400 text-sm">
-                      Pour votre première déclaration, <strong className="text-zinc-300">jedeclaremonmeuble.com</strong> (~150 €) ou un expert-comptable LMNP est recommandé.
-                    </p>
-                  </div>
                 </div>
 
-                {/* Section 5 : Export comptable */}
+                {/* ══ SECTION 6 — EXPORT DOSSIER COMPTABLE ══ */}
                 {declarationData && (
                   <div className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <h3 className="text-lg font-bold text-white">Export dossier comptable complet</h3>
                       <p className="text-xs text-zinc-400 mt-0.5">
-                        Récapitulatif 2031 · Tableau 2033-C · Charges · Prêt à envoyer à un expert-comptable
+                        Récapitulatif 2031 · Tableau 2033-C · Détail factures · Charges récurrentes · Prêt à envoyer à un expert-comptable
                       </p>
                     </div>
                     <button
                       onClick={exportDossierComplet}
                       className="bg-[#C9A84C] text-black font-bold px-5 py-2.5 rounded-lg text-sm hover:bg-[#d4b86a] transition-colors"
                     >
-                      Exporter dossier comptable complet
+                      📥 Exporter dossier comptable complet
                     </button>
                   </div>
                 )}

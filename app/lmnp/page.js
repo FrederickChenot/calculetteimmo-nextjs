@@ -1363,8 +1363,8 @@ export default function LmnpPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     ["Total factures TTC", `${fmt(totalTtcAll)} €`, "text-white"],
-                    ["Amortissements annuels", `${fmt(totalAmortAll)} €/an`, "text-orange-400"],
-                    ["Charges déductibles", `${fmt(totalDeductibleAll)} €`, "text-emerald-400"],
+                    ["Amortissements théoriques 39C", `${fmt(totalAmortAll)} €/an`, "text-orange-400"],
+                    ["Charges déductibles hors amortissements", `${fmt(totalDeductibleAll)} €`, "text-emerald-400"],
                     ["TVA totale", `${fmt(totalTva)} €`, "text-[#C9A84C]"],
                   ].map(([label, val, cls]) => (
                     <div key={label} className="bg-[#12282A] ring-1 ring-[#C9A84C]/20 rounded-xl p-4">

@@ -1160,7 +1160,7 @@ export default function LmnpPage() {
                                           <tr key={idx} className="border-t border-[#1a3a3d]">
                                             <td className="py-1.5 pl-4 text-zinc-400 max-w-[180px] truncate">{item.filename}</td>
                                             <td className="py-1.5 text-zinc-400">{item.fournisseur || "—"}</td>
-                                            <td className="py-1.5 text-zinc-300">{fmt(item.montant_ht)} €</td>
+                                            <td className="py-1.5 text-zinc-300">{fmt(item.montant_ttc)} €</td>
                                             <td className="py-1.5 text-zinc-400">
                                               {item.traitement === "amortissable" && item.duree_amort
                                                 ? `${item.duree_amort} ans`
@@ -1168,7 +1168,7 @@ export default function LmnpPage() {
                                             </td>
                                             <td className="py-1.5 text-orange-400">
                                               {item.traitement === "amortissable" && item.duree_amort
-                                                ? `${fmt(Number(item.montant_ht || 0) / Number(item.duree_amort))} €/an`
+                                                ? `${fmt(Number(item.montant_ttc || 0) / Number(item.duree_amort))} €/an`
                                                 : "—"}
                                             </td>
                                           </tr>

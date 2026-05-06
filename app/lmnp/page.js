@@ -339,10 +339,12 @@ export default function LmnpPage() {
     try {
       const res = await fetch(`/api/lmnp/declaration?annee=${prevAnnee}`);
       const data = await res.json();
-      if (data.deficit_fiscal > 0) {
+      // N'utiliser le déficit N-1 que si l'année précédente avait une activité réelle (loyer > 0)
+      if (data.deficit_fiscal > 0 && data.cases2031?.DA > 0) {
         setDeficitReporte(String(data.deficit_fiscal.toFixed(2)));
         setDeficitN1Source(prevAnnee);
       } else {
+        setDeficitReporte("");
         setDeficitN1Source(null);
       }
     } catch {

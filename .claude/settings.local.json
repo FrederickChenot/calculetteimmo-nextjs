@@ -26,7 +26,8 @@
       "Bash(rmdir \"C:/Users/Fred/Desktop/bureau2/Projet-Dev/calculetteimmo/app/api/crypto/auth/[...nextauth]\")",
       "Bash(npm list *)",
       "Bash(grep -n \"^\\\\s*/>$\\\\|<div[^>]*/>\" app/lmnp/page.js)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "PowerShell(\\(Get-Content \"C:\\\\Dev\\\\calculetteimmo\\\\app\\\\lmnp\\\\page.js\" | Measure-Object -Line\\).Lines)"
     ]
   }
 }

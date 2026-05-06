@@ -966,45 +966,50 @@ export default function LmnpPage() {
                           disabled={!f.analyse_id}
                           className="mt-1 h-4 w-4 accent-[#C9A84C] cursor-pointer flex-shrink-0"
                         />
-                        <div className="flex flex-1 items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          {f.url_pdf ? (
-                            <span
-                              onClick={() => window.open(f.url_pdf, "_blank")}
-                              className="cursor-pointer hover:underline text-[#C9A84C] font-medium truncate block"
-                            >
-                              {f.filename}
-                            </span>
-                          ) : (
-                            <>
-                              <span className="text-zinc-300 font-medium truncate block">{f.filename}</span>
-                              <span className="text-zinc-600 text-xs">(PDF non disponible)</span>
-                            </>
-                          )}
-                          <p className="text-zinc-500 text-xs mt-0.5">
+                          {/* Ligne 1 : nom fichier + montant */}
+                          <div className="flex items-center justify-between gap-2">
+                            {f.url_pdf ? (
+                              <a
+                                href={f.url_pdf}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="cursor-pointer hover:underline text-[#C9A84C] font-medium truncate block"
+                              >
+                                {f.filename}
+                              </a>
+                            ) : (
+                              <span className="text-zinc-300 font-medium truncate block">
+                                {f.filename}
+                                <span className="text-zinc-600 text-xs ml-1">(PDF non disponible)</span>
+                              </span>
+                            )}
+                            <span className="text-white font-semibold text-sm flex-shrink-0">{fmt(f.montant_ttc)} €</span>
+                          </div>
+                          {/* Ligne 2 : fournisseur + date */}
+                          <p className="text-zinc-500 text-xs mt-0.5 truncate max-w-[200px] sm:max-w-none">
                             {f.fournisseur} · {f.date_facture || new Date(f.created_at).toLocaleDateString("fr-FR")}
                           </p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                          <span className="text-white font-semibold text-sm">{fmt(f.montant_ttc)} €</span>
-                          <CategoryBadge cat={f.categorie} />
-                          <TraitementBadge traitement={f.traitement} />
-                          {f.traitement === "amortissable" && f.duree_amort && (
-                            <span className="text-xs text-zinc-500">· {f.duree_amort} ans</span>
-                          )}
-                          <button
-                            onClick={() => openEdit(f)}
-                            className="text-xs text-zinc-400 hover:text-[#C9A84C] transition-colors ml-1 border border-[#2a4a4d] px-2 py-0.5 rounded"
-                          >
-                            Modifier
-                          </button>
-                          <button
-                            onClick={() => deleteFacture(f.id)}
-                            className="text-zinc-600 hover:text-red-400 transition-colors text-xs ml-1"
-                          >
-                            Supprimer
-                          </button>
-                        </div>
+                          {/* Ligne 3 : badges + boutons */}
+                          <div className="flex items-center gap-2 flex-wrap mt-2">
+                            <CategoryBadge cat={f.categorie} />
+                            <TraitementBadge traitement={f.traitement} />
+                            {f.traitement === "amortissable" && f.duree_amort && (
+                              <span className="text-xs text-zinc-500">· {f.duree_amort} ans</span>
+                            )}
+                            <button
+                              onClick={() => openEdit(f)}
+                              className="text-xs text-zinc-400 hover:text-[#C9A84C] transition-colors ml-1 border border-[#2a4a4d] px-2 py-0.5 rounded"
+                            >
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => deleteFacture(f.id)}
+                              className="text-zinc-600 hover:text-red-400 transition-colors text-xs ml-1"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}

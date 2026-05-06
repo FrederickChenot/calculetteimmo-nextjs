@@ -555,8 +555,8 @@ export default function LmnpPage() {
     lines.push(`Case GG — Résultat ${d.cases2031.isDeficit ? "déficit" : "bénéfice"};${d.cases2031.caseGG.toFixed(2)}`);
     lines.push(`Amortissements différés (hors bilan fiscal);${d.cases2031.amortDifferes.toFixed(2)}`);
     lines.push("");
-    lines.push("=== TABLEAU AMORTISSEMENTS 2033-C ===");
-    lines.push("Désignation;Valeur (€);Durée (ans);Amort/an (€);Cumul (€);VNC (€)");
+    lines.push(`=== TABLEAU DE SUIVI DES IMMOBILISATIONS — AMORTISSEMENTS THÉORIQUES 39 C NON DÉDUITS EN ${declarationAnnee} ===`);
+    lines.push("Désignation;Valeur TTC (€);Durée (ans);Annuité théorique (€);Amortissement différé 39C (€);VNC théorique (€)");
     d.tableau2033C.forEach(r => {
       lines.push(`${r.designation};${r.valeur.toFixed(2)};${r.duree};${r.amortAn.toFixed(2)};${r.cumul.toFixed(2)};${r.vnc.toFixed(2)}`);
     });

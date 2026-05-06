@@ -31,15 +31,15 @@ export async function GET(request) {
 
   function annuite(r) {
     if (r.traitement === "amortissable" && r.duree_amort) {
-      return Number(r.montant_ht || 0) / Number(r.duree_amort);
+      return Number(r.montant_ttc || 0) / Number(r.duree_amort);
     }
     return null;
   }
 
   function deductible(r) {
-    if (r.traitement === "deductible") return Number(r.montant_ht || 0);
+    if (r.traitement === "deductible") return Number(r.montant_ttc || 0);
     if (r.traitement === "amortissable" && r.duree_amort) {
-      return Number(r.montant_ht || 0) / Number(r.duree_amort);
+      return Number(r.montant_ttc || 0) / Number(r.duree_amort);
     }
     return 0;
   }

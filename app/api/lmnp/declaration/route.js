@@ -52,15 +52,15 @@ export async function GET(request) {
       ].reduce((a, b) => a + b, 0)
     : 0;
 
-  // Factures déductibles
+  // Factures déductibles (base TTC)
   const deductibleHt = facturesRows
     .filter(f => f.traitement === "deductible")
-    .reduce((s, f) => s + (parseFloat(f.montant_ht) || 0), 0);
+    .reduce((s, f) => s + (parseFloat(f.montant_ttc) || 0), 0);
 
-  // Amortissements factures
+  // Amortissements factures (base TTC)
   const amortissables = facturesRows.filter(f => f.traitement === "amortissable" && f.duree_amort);
   const amortAnnuel = amortissables.reduce((s, f) => {
-    return s + (parseFloat(f.montant_ht) || 0) / parseFloat(f.duree_amort);
+    return s + (parseFloat(f.montant_ttc) || 0) / parseFloat(f.duree_amort);
   }, 0);
 
   const chargesExternes = deductibleHt + totalChargesRec;
@@ -92,16 +92,16 @@ export async function GET(request) {
   }
 
   for (const f of amortissables) {
-    const ht = parseFloat(f.montant_ht) || 0;
+    const ttc = parseFloat(f.montant_ttc) || 0;
     const duree = parseFloat(f.duree_amort);
-    const annuite = ht / duree;
+    const annuite = ttc / duree;
     tableau2033C.push({
       designation: f.fournisseur || f.description || f.filename || "Inconnu",
-      valeur: ht,
+      valeur: ttc,
       duree,
       amortAn: annuite,
       cumul: annuite,
-      vnc: ht - annuite,
+      vnc: ttc - annuite,
     });
   }
 
@@ -135,7 +135,8 @@ export async function GET(request) {
     tableau2033C,
     totalAmort,
     detail: {
-      deductibleHt,
+      deductibleHt: facturesRows.filter(f => f.traitement === "deductible").reduce((s, f) => s + (parseFloat(f.montant_ht) || 0), 0),
+      deductibleTtc: deductibleHt,
       totalChargesRec,
       amortAnnuel,
       amortBienAnnuel,

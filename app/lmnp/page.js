@@ -561,7 +561,7 @@ export default function LmnpPage() {
     lines.push(`TOTAL;;;${d.totalAmort.toFixed(2)};;`);
     lines.push("");
     lines.push("=== DETAIL CHARGES ===");
-    lines.push(`Factures déductibles HT;${d.detail.deductibleHt.toFixed(2)}`);
+    lines.push(`Factures déductibles TTC;${d.detail.deductibleTtc.toFixed(2)}`);
     lines.push(`Charges récurrentes;${d.detail.totalChargesRec.toFixed(2)}`);
     lines.push(`Amortissements factures;${d.detail.amortAnnuel.toFixed(2)}`);
     lines.push(`Amortissement bien;${d.detail.amortBienAnnuel.toFixed(2)}`);
@@ -609,7 +609,7 @@ export default function LmnpPage() {
 
   const totalHtAll = factures.reduce((s, f) => s + Number(f.montant_ht || 0), 0);
   const totalTtcAll = factures.reduce((s, f) => s + Number(f.montant_ttc || 0), 0);
-  const deductibleHt = factures.filter(f => f.traitement === "deductible").reduce((s, f) => s + Number(f.montant_ht || 0), 0);
+  const deductibleHt = factures.filter(f => f.traitement === "deductible").reduce((s, f) => s + Number(f.montant_ttc || 0), 0);
   const totalTva = factures.reduce((s, f) => s + Number(f.tva || 0), 0);
 
   // Amortissements annuels : somme des annuités (montant_ht / duree_amort)
@@ -617,8 +617,8 @@ export default function LmnpPage() {
     .filter(f => f.traitement === "amortissable" && f.duree_amort)
     .map(f => ({
       label: f.fournisseur || f.description || f.filename,
-      annuite: Number(f.montant_ht || 0) / Number(f.duree_amort),
-      montantHt: Number(f.montant_ht || 0),
+      annuite: Number(f.montant_ttc || 0) / Number(f.duree_amort),
+      montantHt: Number(f.montant_ttc || 0),
       dureeAmort: Number(f.duree_amort),
     }));
   const amortAnnuel = amortDetails.reduce((s, d) => s + d.annuite, 0);
@@ -1462,7 +1462,7 @@ export default function LmnpPage() {
                       "Ventilation vérifiée facture par facture",
                       "SIRET disponible : 833 889 918 00029",
                       "Espace professionnel impots.gouv.fr créé",
-                      `Date limite 2031 notée : 18 septembre ${declarationAnnee + 1}`,
+                      `Date limite 2031 notée : 18 mai ${declarationAnnee + 1}`,
                     ].map((item, i) => (
                       <label key={i} className="flex items-center gap-3 cursor-pointer group">
                         <input
@@ -1497,7 +1497,7 @@ export default function LmnpPage() {
                     <h3 className="text-lg font-bold text-white">Formulaire 2031-SD</h3>
                     <p className="text-sm text-zinc-400 mt-1">
                       À déposer avant le{" "}
-                      <span className="text-[#C9A84C] font-semibold">18 septembre {declarationAnnee + 1}</span>
+                      <span className="text-[#C9A84C] font-semibold">18 mai {declarationAnnee + 1}</span>
                       {" "}— impots.gouv.fr → Espace Professionnel
                     </p>
                   </div>
@@ -1716,7 +1716,7 @@ export default function LmnpPage() {
                           <div className="bg-[#0d1f21] rounded-xl divide-y divide-[#2a4a4d]">
                             <div className="flex justify-between items-center px-4 py-3">
                               <span className="text-zinc-400 text-sm">Charges factures déductibles</span>
-                              <span className="font-semibold text-sm text-emerald-400">{fmt(declarationData.detail.deductibleHt)} €</span>
+                              <span className="font-semibold text-sm text-emerald-400">{fmt(declarationData.detail.deductibleTtc)} €</span>
                             </div>
                             <div className="flex justify-between items-center px-4 py-3">
                               <span className="text-zinc-400 text-sm">Charges récurrentes</span>
@@ -1824,16 +1824,16 @@ export default function LmnpPage() {
                         {declarationData.cases2031.isDeficit ? (
                           <div className="flex justify-between items-center px-4 py-4">
                             <div>
-                              <p className="text-zinc-300 text-sm font-semibold">Case 5KE — Déficit LMNP</p>
-                              <p className="text-xs text-zinc-500 mt-0.5">Déclarant principal (Fred) ou 5KF (conjoint)</p>
+                              <p className="text-zinc-300 text-sm font-semibold">Case 5NY — Déficit LMNP</p>
+                              <p className="text-xs text-zinc-500 mt-0.5">Déclarant principal (Fred) ou 5OY (conjoint)</p>
                             </div>
                             <span className="font-bold text-emerald-400 text-xl ml-4">{fmt(declarationData.cases2031.caseGG)} €</span>
                           </div>
                         ) : (
                           <div className="flex justify-between items-center px-4 py-4">
                             <div>
-                              <p className="text-zinc-300 text-sm font-semibold">Case 5KP — Bénéfice LMNP</p>
-                              <p className="text-xs text-zinc-500 mt-0.5">Déclarant principal (Fred) ou 5KR (conjoint)</p>
+                              <p className="text-zinc-300 text-sm font-semibold">Case 5NA — Bénéfice LMNP</p>
+                              <p className="text-xs text-zinc-500 mt-0.5">Déclarant principal (Fred) ou 5OA (conjoint)</p>
                             </div>
                             <span className="font-bold text-amber-400 text-xl ml-4">{fmt(declarationData.cases2031.caseGG)} €</span>
                           </div>
@@ -1898,12 +1898,12 @@ export default function LmnpPage() {
                       {
                         icon: "✅",
                         title: "Valider et télétransmettre",
-                        body: `Date limite : 18 septembre ${declarationAnnee + 1}\nConserver l'accusé de réception`,
+                        body: `Date limite : 18 mai ${declarationAnnee + 1}\nConserver l'accusé de réception`,
                       },
                       {
                         icon: "📝",
                         title: "Compléter la 2042-C-PRO",
-                        body: `Mai ${declarationAnnee + 1} → Déclaration revenus habituelle → Ajouter case 5KE : ${declarationData ? fmt(declarationData.cases2031.caseGG) + " €" : "…"}\n→ Votre femme conserve ses cases BNC habituelles`,
+                        body: `Mai ${declarationAnnee + 1} → Déclaration revenus habituelle → Ajouter case 5NY : ${declarationData ? fmt(declarationData.cases2031.caseGG) + " €" : "…"}\n→ Votre femme conserve ses cases BNC habituelles`,
                       },
                       {
                         icon: "⚠️",

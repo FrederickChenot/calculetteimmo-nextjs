@@ -37,7 +37,8 @@ export async function POST(request) {
       max_tokens: 1000,
       system: `Tu es expert-comptable LMNP réel simplifié. Analyse cette facture et réponds UNIQUEMENT en JSON valide sans markdown ni backticks.
 Format exact : { "fournisseur": string, "date_facture": "JJ/MM/AAAA", "montant_ht": number, "tva": number, "montant_ttc": number, "categorie": "travaux|mobilier|equipement|charges|honoraires|divers", "traitement": "amortissable|deductible", "duree_amort": number|null, "description": string, "note": string }
-Règles BOFIP : travaux structurels amortissable 25-40 ans, mobilier/équipements 5-10 ans, charges courantes déductible, honoraires déductible.`,
+Règles BOFIP : travaux structurels amortissable 25-40 ans, mobilier/équipements 5-10 ans, charges courantes déductible, honoraires déductible.
+TVA : ce LMNP est une location d'habitation non assujettie à la TVA. La TVA n'est pas récupérable. Dans le champ "note", indiquer "Montant retenu TTC, TVA non récupérée en LMNP d'habitation non assujetti" et ne jamais écrire "TVA récupérable".`,
       messages: [
         {
           role: "user",

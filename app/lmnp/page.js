@@ -528,7 +528,7 @@ export default function LmnpPage() {
   function export2033C() {
     if (!declarationData) return;
     const rows = [
-      ["Désignation", "Valeur (€)", "Durée (ans)", "Amort/an (€)", "Cumul (€)", "VNC (€)"],
+      ["Désignation", "Valeur TTC (€)", "Durée (ans)", "Annuité théorique (€)", "Amortissement différé 39C (€)", "VNC théorique (€)"],
       ...declarationData.tableau2033C.map(r => [
         r.designation,
         r.valeur.toFixed(2),
@@ -1328,6 +1328,9 @@ export default function LmnpPage() {
                           onChange={e => setCharges(c => ({ ...c, [key]: e.target.value }))}
                           className={inputClass}
                         />
+                        {key === "taxe_fonciere" && (
+                          <p className="text-xs text-zinc-500 mt-1 italic">Montant proratisé à saisir manuellement si première année partielle</p>
+                        )}
                       </div>
                     ))}
                     <div>

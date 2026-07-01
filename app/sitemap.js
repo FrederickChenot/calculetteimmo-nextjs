@@ -21,5 +21,6 @@ export default function sitemap() {
     { url: `${base}/blog/bitcoin-vs-immobilier-2026`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/blog/declarer-crypto-impots-2026`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/politique-confidentialite`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${base}/mentions-legales`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

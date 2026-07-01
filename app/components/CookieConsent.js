@@ -35,14 +35,29 @@ function ModalConfidentialite({ onClose }) {
         {/* Body */}
         <div className="overflow-y-auto px-6 py-5 flex-1">
           <Section title="1. Données collectées">
-            CalculetteImmo ne collecte <strong>aucune donnée personnelle identifiable</strong>. Les
-            valeurs saisies dans les calculettes (prix, revenus, taux…) ne sont pas transmises à nos
-            serveurs et restent uniquement dans votre navigateur.
+            Les <strong>calculettes publiques</strong> (mensualité, capacité d'emprunt, frais de
+            notaire, rentabilité, intérêts composés) n'envoient aucune donnée à nos serveurs : les
+            valeurs saisies restent uniquement dans votre navigateur. Les{" "}
+            <strong>modules avec compte</strong> (Tracker Crypto, LMNP) nécessitent la création
+            d'un compte (email et mot de passe hashé) et stockent les transactions ou factures que
+            vous saisissez dans une base de données sécurisée (Neon, UE), accessibles uniquement à
+            l'utilisateur connecté et jamais revendues.
           </Section>
           <Section title="2. Cookies et traceurs">
-            Le site peut utiliser des cookies techniques strictement nécessaires au fonctionnement
-            (aucun cookie publicitaire ou de profilage). Aucune donnée de navigation n'est revendue
-            à des tiers.
+            Le site utilise des cookies techniques nécessaires au fonctionnement, ainsi que des
+            cookies publicitaires Google AdSense (si vous les acceptez via le bandeau de
+            consentement) pour financer la gratuité du site. Vous pouvez refuser les cookies
+            publicitaires à tout moment via le bandeau ou en effaçant vos données de navigation.
+            Pour gérer la personnalisation des annonces Google, consultez{" "}
+            <a
+              href="https://policies.google.com/technologies/ads"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#C9A84C] underline hover:text-[#b8943d]"
+            >
+              cette page
+            </a>
+            .
           </Section>
           <Section title="3. Hébergement">
             Le site est hébergé dans l'Union Européenne. Les données de navigation (logs serveur)
@@ -56,6 +71,10 @@ function ModalConfidentialite({ onClose }) {
           <Section title="5. Tiers">
             Le site peut intégrer des ressources externes (polices Google Fonts, CDN). Ces tiers
             disposent de leurs propres politiques de confidentialité.
+          </Section>
+          <Section title="Liens d'affiliation">
+            Certains liens du site (Tipeee, Bitstack) sont des liens d'affiliation. Si vous créez
+            un compte via ces liens, nous pouvons percevoir une commission, sans surcoût pour vous.
           </Section>
         </div>
         {/* Footer */}

@@ -1,21 +1,10 @@
 import { sqlLmnp } from "@/app/lib/lmnpDb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { rateLimit } from "@/app/lib/rateLimit";
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Non autorisé" }, { status: 401 });
-
-  const rawIp = request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
-  const { allowed, resetAt } = rateLimit(`lmnp_analyze_${rawIp}`, 10, 60 * 60 * 1000);
-  if (!allowed) {
-    const minutes = Math.ceil((resetAt - Date.now()) / 60000);
-    return Response.json(
-      { error: `Trop de requêtes. Réessayez dans ${minutes} minutes.` },
-      { status: 429 }
-    );
-  }
 
   const { pdf_base64, filename, annee, save, url_pdf } = await request.json();
 

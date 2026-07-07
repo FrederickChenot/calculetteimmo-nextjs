@@ -56,7 +56,7 @@ export const authOptions = {
       if (account?.provider === "google") {
         const existing = await sqlCrypto`SELECT id FROM crypto_users WHERE email = ${user.email}`;
         if (existing.length === 0) {
-          await sqlCrypto`INSERT INTO crypto_users (email, password) VALUES (${user.email}, 'google-oauth')`;
+          return false;
         }
         user.role = "crypto";
       }

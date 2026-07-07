@@ -4,10 +4,8 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function LoginForm() {
-  const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -17,29 +15,11 @@ function LoginForm() {
 
   async function handleEmail() {
     setError(null);
-    if (mode === "register" && password !== confirm) {
-      setError("Les mots de passe ne correspondent pas");
-      return;
-    }
     if (password.length < 8) {
       setError("Mot de passe trop court (8 caractères minimum)");
       return;
     }
     setLoading(true);
-
-    if (mode === "register") {
-      const res = await fetch("/api/crypto/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (data.error) { setError(data.error); setLoading(false); return; }
-      setMode("login");
-      setError(null);
-      setLoading(false);
-      return;
-    }
 
     const res = await signIn("crypto-credentials", { email, password, redirect: false });
     if (res?.error) {
@@ -59,7 +39,7 @@ function LoginForm() {
           Tracker <span className="text-[#C9A84C]">Crypto</span>
         </h1>
         <p className="text-sm text-zinc-400 mb-6">
-          {mode === "login" ? "Connectez-vous" : "Créer un compte"}
+          Connectez-vous
         </p>
 
         {/* Google */}
@@ -115,30 +95,18 @@ function LoginForm() {
               )}
             </button>
           </div>
-          {mode === "register" && (
-            <input type="password" placeholder="Confirmer le mot de passe" value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleEmail()}
-              className={inputClass}/>
-          )}
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <button onClick={handleEmail} disabled={loading}
             className="bg-[#C9A84C] text-black font-bold py-2 rounded-lg hover:bg-[#d4b86a] transition-colors text-sm">
-            {loading ? "..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+            {loading ? "..." : "Se connecter"}
           </button>
-          <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(null); }}
-            className="text-sm text-zinc-400 hover:text-[#C9A84C] transition-colors">
-            {mode === "login" ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
+          <button onClick={() => router.push("/crypto/reset-password")}
+            className="text-xs text-zinc-500 hover:text-[#C9A84C] transition-colors">
+            Mot de passe oublié ?
           </button>
-          {mode === "login" && (
-            <button onClick={() => router.push("/crypto/reset-password")}
-              className="text-xs text-zinc-500 hover:text-[#C9A84C] transition-colors">
-              Mot de passe oublié ?
-            </button>
-          )}
         </div>
         <p className="text-xs text-zinc-600 text-center mt-4 leading-relaxed">
-          En créant un compte, vous acceptez nos{" "}
+          En vous connectant, vous acceptez nos{" "}
           <a href="/politique-confidentialite" className="text-zinc-500 underline hover:text-[#C9A84C]">CGU</a>
           {" "}et reconnaissez que cet outil est fourni à titre indicatif uniquement.
         </p>

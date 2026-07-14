@@ -27,7 +27,10 @@
       "Bash(npm list *)",
       "Bash(grep -n \"^\\\\s*/>$\\\\|<div[^>]*/>\" app/lmnp/page.js)",
       "Bash(npx next *)",
-      "PowerShell(\\(Get-Content \"C:\\\\Dev\\\\calculetteimmo\\\\app\\\\lmnp\\\\page.js\" | Measure-Object -Line\\).Lines)"
+      "PowerShell(\\(Get-Content \"C:\\\\Dev\\\\calculetteimmo\\\\app\\\\lmnp\\\\page.js\" | Measure-Object -Line\\).Lines)",
+      "Bash(git fetch *)",
+      "Bash(git rebase *)",
+      "Bash(git stash *)"
     ]
   }
 }

@@ -594,10 +594,10 @@ export default function LmnpPage() {
     acc[key].totalTtc += Number(f.montant_ttc || 0);
     acc[key].items.push(f);
     if (trait === "amortissable" && f.duree_amort) {
-      const ht = Number(f.montant_ht || 0);
-      acc[key].amortAnnuel += ht / Number(f.duree_amort);
-      acc[key].totalAmortHt += ht;
-      acc[key].sumWeightedDuree += ht * Number(f.duree_amort);
+      const ttc = Number(f.montant_ttc || 0);
+      acc[key].amortAnnuel += ttc / Number(f.duree_amort);
+      acc[key].totalAmortHt += ttc;
+      acc[key].sumWeightedDuree += ttc * Number(f.duree_amort);
     }
     return acc;
   }, {});
@@ -1160,7 +1160,7 @@ export default function LmnpPage() {
                                           <tr key={idx} className="border-t border-[#1a3a3d]">
                                             <td className="py-1.5 pl-4 text-zinc-400 max-w-[180px] truncate">{item.filename}</td>
                                             <td className="py-1.5 text-zinc-400">{item.fournisseur || "—"}</td>
-                                            <td className="py-1.5 text-zinc-300">{fmt(item.montant_ttc)} €</td>
+                                            <td className="py-1.5 text-zinc-300">{fmt(item.montant_ht)} €</td>
                                             <td className="py-1.5 text-zinc-400">
                                               {item.traitement === "amortissable" && item.duree_amort
                                                 ? `${item.duree_amort} ans`
